@@ -73,8 +73,15 @@ Full list: `.env.example`. **Never commit `.env`.**
 
 ## Team
 
-| Member | GitHub | Focus |
-|--------|--------|-------|
-| _[name]_ | _[@handle]_ | _[area]_ |
+**Project:** AI Food Analyzer  
+**Group:** Byte Bite
 
+| # | Member | GitHub | Focus |
+|---|--------|--------|-------|
+| 1 | Rəhimə Kərimova | [@RahimaKarimova](https://github.com/RahimaKarimova) | _[area]_ |
+| 2 | Gülnur Məmmədova | [@gulnurmammadova](https://github.com/gulnurmammadova) | _[area]_ |
+| 3 | Şəmistan Hüseynov | [@Shamistanh](https://github.com/Shamistanh) | _[area]_ |
+| 4 | Aysel Mamedova | [@AMammedova](https://github.com/AMammedova) | _[area]_ |
+
+_Update **Focus** columns as you assign tasks._
 
