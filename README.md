@@ -77,8 +77,4 @@ Full list: `.env.example`. **Never commit `.env`.**
 |--------|--------|-------|
 | _[name]_ | _[@handle]_ | _[area]_ |
 
-_Update this table as you assign work._
 
-## AI assistant disclosure
-
-_[Update in the final report — e.g. Cursor used for scaffolding; team owns all merged code.]_
