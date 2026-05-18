@@ -1,0 +1,56 @@
+# Byte Bite — local database stack
+#
+#   docker compose up -d
+#   docker compose down
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: foodanalyzer-db
+    restart: unless-stopped
+    networks:
+      - foodanalyzer-net
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: foodanalyzer
+    ports:
+      - "5432:5432"
+    volumes:
+      - foodanalyzer_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-foodanalyzer}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  pgadmin:
+    image: dpage/pgadmin4:8.14
+    container_name: foodanalyzer-pgadmin
+    restart: unless-stopped
+    networks:
+      - foodanalyzer-net
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@bytebite.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "${PGADMIN_PORT:-5051}:80"
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+
+networks:
+  foodanalyzer-net:
+    driver: bridge
+
+volumes:
+  foodanalyzer_pgdata:

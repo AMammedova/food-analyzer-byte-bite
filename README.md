@@ -27,6 +27,45 @@ python demo_ai.py --offline
 pytest tests/test_ai_smoke.py -v
 ```
 
+## Docker Compose (PostgreSQL + pgAdmin)
+
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+
+```bash
+cp .env.example .env    # POSTGRES_* must match docker-compose.yml
+
+docker compose up -d    # starts db + pgadmin
+docker compose ps       # db should be healthy
+docker compose down     # stop
+docker compose down -v  # stop and delete DB volume
+```
+
+### Database credentials (local dev)
+
+| Variable | Default | Used by |
+|----------|---------|---------|
+| `POSTGRES_USER` | `postgres` | `db` service, Python `config.py` |
+| `POSTGRES_PASSWORD` | `dev` | same |
+| `POSTGRES_DB` | `foodanalyzer` | same |
+| `POSTGRES_HOST` | `localhost` | Python on your PC → `localhost` |
+| `POSTGRES_PORT` | `5433` | host port (5433 if local PostgreSQL uses 5432) |
+
+`DATABASE_URL` is built automatically from `POSTGRES_*` if not set explicitly.
+
+### pgAdmin
+
+| Variable | Default |
+|----------|---------|
+| `PGADMIN_DEFAULT_EMAIL` | `admin@bytebite.local` |
+| `PGADMIN_DEFAULT_PASSWORD` | `admin` |
+| `PGADMIN_PORT` | `5051` |
+
+1. Open http://localhost:5051  
+2. Log in with the email/password above.  
+3. Server **Food Analyzer (Byte Bite)** is pre-configured (connects to `db` inside Docker).  
+
+If you change `POSTGRES_PASSWORD` in `.env`, also update `docker/pgadmin/servers.json` (`Password` field).
+
 ## Project layout
 
 ```
