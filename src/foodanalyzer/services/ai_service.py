@@ -21,7 +21,7 @@ from typing import Any
 
 import ai
 
-from src.foodanalyzer.services.retry import provider_retry
+from foodanalyzer.services.retry import provider_retry
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class AIService:
                     asyncio.to_thread(
                         self._ai.identify_ingredients,
                         image_path,
-                        vlm,
+                        vlm=vlm,
                     ),
                     timeout=REQUEST_TIMEOUT_SECONDS,
                 )
