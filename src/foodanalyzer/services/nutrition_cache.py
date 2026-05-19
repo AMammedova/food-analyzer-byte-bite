@@ -27,7 +27,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from src.foodanalyzer.config import settings
+from foodanalyzer.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class NutritionCache:
     """Coroutine-safe async TTL cache keyed by ingredient name."""
 
     def __init__(self) -> None:
-        self.ttl_seconds: int = settings.nutrition_cache_ttl_seconds
+        self.ttl_seconds: int = get_settings().nutrition_cache_ttl_seconds
         self._store: dict[str, CacheEntry] = {}
         self._lock = asyncio.Lock()
 
