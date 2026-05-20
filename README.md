@@ -75,16 +75,16 @@ food-analyzer-byte-bite/
 ├── demo_ai.py          # offline/online AI demo
 ├── src/foodanalyzer/   # your SE layer (CLI, API, storage, …)
 ├── tests/              # smoke tests + your tests
-├── docs/               # architecture, notes
+├── docs/               # architecture, API, storage (see docs/architecture.md)
 └── TOPIC.md            # full requirements from course
 ```
 
 ## What we are building
 
-See `TOPIC.md` and `docs/architecture.md`. Minimum deliverables:
+See `TOPIC.md` and `docs/`. Minimum deliverables:
 
 - `python -m foodanalyzer analyze <image>` — CLI totals table
-- `POST /analyze` — multipart image upload (FastAPI)
+- `POST /analyze` — multipart image upload (FastAPI) — see [docs/api.md](docs/api.md)
 - PostgreSQL history log, nutrition cache (24h TTL), parallel lookups, retries
 - ≥60% test coverage (offline), Dockerfile
 
