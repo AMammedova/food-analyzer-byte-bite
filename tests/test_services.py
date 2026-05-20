@@ -32,9 +32,9 @@ from tenacity import AsyncRetrying
 
 
 from ai.providers.base import ProviderError
-from src.foodanalyzer.services.ai_service import AIService
-from src.foodanalyzer.services.nutrition_cache import NutritionCache
-from src.foodanalyzer.services.retry import provider_retry
+from foodanalyzer.services.ai_service import AIService
+from foodanalyzer.services.nutrition_cache import NutritionCache
+from foodanalyzer.services.retry import provider_retry
 
 
 # ─────────────────────────────────────────────────────────────────────────────
