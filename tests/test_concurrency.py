@@ -20,8 +20,8 @@ from __future__ import annotations
 import pytest
 import asyncio
 
-from src.foodanalyzer.concurrency.pipeline import NutritionPipeline
-from src.foodanalyzer.services.nutrition_cache import NutritionCache
+from foodanalyzer.concurrency.pipeline import NutritionPipeline
+from foodanalyzer.services.nutrition_cache import NutritionCache
 
 
 # ─────────────────────────────────────────────────────────────────────────────
