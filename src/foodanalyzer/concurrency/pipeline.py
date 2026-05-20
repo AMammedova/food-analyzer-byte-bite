@@ -43,7 +43,7 @@ import logging
 from typing import Any
 
 from ai.providers.base import ProviderError
-from src.foodanalyzer.services.retry import provider_retry
+from foodanalyzer.services.retry import provider_retry
 
 logger = logging.getLogger(__name__)
 
