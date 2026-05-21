@@ -1,4 +1,4 @@
-"""FastAPI HTTP API — POST /analyze, GET /health, GET /history."""
+"""FastAPI HTTP API — POST /analyze, GET /health, GET /history, GET /."""
 
 from __future__ import annotations
 
@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, File, Query, Request, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from ai.providers.base import ProviderError
 from foodanalyzer.config import get_settings
@@ -18,6 +19,8 @@ from foodanalyzer.logging_config import setup_logging
 from foodanalyzer.models import AnalysisRecord, AnalysisResult
 from foodanalyzer.storage import db, repository
 from foodanalyzer.validation import ValidationError, validate_image_bytes
+
+_STATIC_DIR = Path(__file__).parent / "static"
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +48,13 @@ def create_app(*, lifespan_handler=lifespan) -> FastAPI:
     app = FastAPI(title="Food Analyzer", lifespan=lifespan_handler)
     app.state.vlm = None
     app.state.nutrition = None
+
+    if _STATIC_DIR.exists():
+        app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
+
+    @app.get("/", include_in_schema=False)
+    async def ui() -> FileResponse:
+        return FileResponse(_STATIC_DIR / "index.html")
 
     @app.exception_handler(ValidationError)
     async def validation_error_handler(

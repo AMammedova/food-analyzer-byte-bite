@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Byte Bite — Food Analyzer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:   #22c55e;
+      --green-d: #16a34a;
+      --orange:  #f97316;
+      --bg:      #f8fafc;
+      --card:    #ffffff;
+      --border:  #e2e8f0;
+      --text:    #1e293b;
+      --muted:   #64748b;
+      --radius:  14px;
+      --shadow:  0 2px 16px rgba(0,0,0,.07);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo { font-size: 1.6rem; }
+    header h1 { font-size: 1.2rem; font-weight: 700; }
+    header span { font-size: .85rem; color: var(--muted); margin-left: auto; }
+
+    /* ── Layout ── */
+    main {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 720px) { main { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    /* ── Drop zone ── */
+    #drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    #drop-zone.over, #drop-zone:hover {
+      border-color: var(--green);
+      background: #f0fdf4;
+    }
+    #drop-zone .icon { font-size: 2.5rem; margin-bottom: .5rem; }
+    #drop-zone p { color: var(--muted); font-size: .9rem; }
+    #drop-zone strong { color: var(--green); }
+    #file-input { display: none; }
+
+    #preview-wrap { margin-top: 1rem; display: none; }
+    #preview-wrap img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      margin-top: 1rem;
+      padding: .6rem 1.4rem;
+      border: none;
+      border-radius: 8px;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: var(--green-d); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-ghost { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Results ── */
+    #result-card { display: none; }
+
+    .badge {
+      display: inline-block;
+      padding: .2rem .7rem;
+      border-radius: 999px;
+      font-size: .78rem;
+      font-weight: 600;
+    }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-red   { background: #fee2e2; color: #b91c1c; }
+
+    .totals-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .75rem;
+      margin: 1rem 0;
+    }
+    .total-box {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: .75rem;
+      text-align: center;
+    }
+    .total-box .val { font-size: 1.4rem; font-weight: 700; color: var(--green); }
+    .total-box .lbl { font-size: .72rem; color: var(--muted); margin-top: .1rem; }
+
+    /* ── Ingredient table ── */
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    th {
+      text-align: left;
+      padding: .5rem .75rem;
+      color: var(--muted);
+      font-weight: 600;
+      border-bottom: 2px solid var(--border);
+    }
+    td { padding: .5rem .75rem; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+
+    .conf-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+    .conf-bar-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 3px;
+      transition: width .4s ease;
+    }
+
+    /* ── History ── */
+    #history-section {
+      grid-column: 1 / -1;
+    }
+    .history-controls {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    .history-controls select, .history-controls input {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .4rem .8rem;
+      font-size: .85rem;
+      background: var(--bg);
+    }
+
+    .history-empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem;
+      font-size: .9rem;
+    }
+
+    .hist-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      align-items: center;
+      padding: .65rem .75rem;
+      border-bottom: 1px solid var(--border);
+      font-size: .84rem;
+      transition: background .15s;
+    }
+    .hist-row:hover { background: #f8fafc; cursor: pointer; }
+    .hist-row:last-child { border-bottom: none; }
+    .hist-head {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: .78rem;
+      padding: .4rem .75rem;
+      border-bottom: 2px solid var(--border);
+    }
+    .hist-img { font-size: .8rem; color: var(--text); word-break: break-all; }
+    .num { color: var(--orange); font-weight: 700; }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      justify-content: flex-end;
+      margin-top: 1rem;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: .8rem 1.2rem;
+      border-radius: 10px;
+      font-size: .88rem;
+      font-weight: 500;
+      color: #fff;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+      z-index: 100;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.error { background: #ef4444; }
+    #toast.success { background: var(--green); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">🍽️</span>
+  <h1>Byte Bite — Food Analyzer</h1>
+  <span>AI-ENG-110 · Team Byte Bite</span>
+</header>
+
+<main>
+  <!-- Upload card -->
+  <div class="card">
+    <h2>📤 Upload Meal Photo</h2>
+
+    <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="icon">🥗</div>
+      <p>Drag &amp; drop a meal photo here<br>or <strong>click to browse</strong></p>
+      <p style="margin-top:.4rem;font-size:.78rem">JPEG · PNG · max 5 MB</p>
+    </div>
+    <input type="file" id="file-input" accept="image/jpeg,image/png" />
+
+    <div id="preview-wrap">
+      <img id="preview-img" src="" alt="preview" />
+    </div>
+
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-primary" id="analyze-btn" disabled onclick="analyzeImage()">
+        🔍 Analyze
+      </button>
+      <button class="btn btn-ghost" id="clear-btn" onclick="clearAll()" style="display:none">
+        ✕ Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- Result card -->
+  <div class="card" id="result-card">
+    <h2>
+      📊 Analysis Result
+      <span id="meal-badge"></span>
+    </h2>
+
+    <div class="totals-grid" id="totals-grid"></div>
+
+    <div id="ingredients-wrap"></div>
+  </div>
+
+  <!-- History section -->
+  <div class="card" id="history-section">
+    <h2>🕑 Recent Analyses</h2>
+    <div class="history-controls">
+      <button class="btn btn-ghost" onclick="loadHistory()" style="padding:.4rem .9rem;margin-top:0">↻ Refresh</button>
+      <select id="hist-limit" onchange="loadHistory()">
+        <option value="5">5 per page</option>
+        <option value="10" selected>10 per page</option>
+        <option value="20">20 per page</option>
+      </select>
+    </div>
+
+    <div id="history-body">
+      <div class="history-empty">Loading…</div>
+    </div>
+
+    <div class="pagination" id="pagination"></div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let selectedFile = null;
+  let histOffset   = 0;
+
+  // ── Drop zone ──────────────────────────────────────────────────────────────
+  const dropZone  = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('over'); });
+  dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('over'));
+  dropZone.addEventListener('drop',      e  => {
+    e.preventDefault();
+    dropZone.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f) setFile(f);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+
+  function setFile(f) {
+    selectedFile = f;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('preview-img').src = ev.target.result;
+      document.getElementById('preview-wrap').style.display = 'block';
+    };
+    reader.readAsDataURL(f);
+    document.getElementById('analyze-btn').disabled = false;
+    document.getElementById('clear-btn').style.display = 'inline-flex';
+    document.getElementById('result-card').style.display = 'none';
+  }
+
+  function clearAll() {
+    selectedFile = null;
+    fileInput.value = '';
+    document.getElementById('preview-wrap').style.display = 'none';
+    document.getElementById('preview-img').src = '';
+    document.getElementById('analyze-btn').disabled = true;
+    document.getElementById('clear-btn').style.display = 'none';
+    document.getElementById('result-card').style.display = 'none';
+  }
+
+  // ── Analyze ────────────────────────────────────────────────────────────────
+  async function analyzeImage() {
+    if (!selectedFile) return;
+
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Analyzing…';
+
+    const form = new FormData();
+    form.append('file', selectedFile);
+
+    try {
+      const res  = await fetch('/analyze', { method: 'POST', body: form });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || `HTTP ${res.status}`);
+      }
+      renderResult(data);
+      toast('Analysis complete!', 'success');
+      loadHistory();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '🔍 Analyze';
+    }
+  }
+
+  // ── Render result ──────────────────────────────────────────────────────────
+  function renderResult(data) {
+    const card = document.getElementById('result-card');
+    card.style.display = 'block';
+
+    // Badge
+    const badge = document.getElementById('meal-badge');
+    if (data.meal_recognized) {
+      badge.className = 'badge badge-green';
+      badge.textContent = '✓ Meal recognized';
+    } else {
+      badge.className = 'badge badge-red';
+      badge.textContent = '✗ No meal found';
+    }
+
+    // Totals
+    const t = data.totals || {};
+    document.getElementById('totals-grid').innerHTML = `
+      <div class="total-box"><div class="val">${fmt1(t.kcal)}</div><div class="lbl">kcal</div></div>
+      <div class="total-box"><div class="val">${fmt1(t.protein_g)}g</div><div class="lbl">protein</div></div>
+      <div class="total-box"><div class="val">${fmt1(t.carbs_g)}g</div><div class="lbl">carbs</div></div>
+      <div class="total-box"><div class="val">${fmt1(t.fat_g)}g</div><div class="lbl">fat</div></div>
+    `;
+
+    // Ingredients table
+    const wrap = document.getElementById('ingredients-wrap');
+    if (!data.meal_recognized || !data.ingredients?.length) {
+      wrap.innerHTML = '<p style="color:var(--muted);font-size:.88rem;margin-top:.5rem">No ingredients identified.</p>';
+      return;
+    }
+
+    const rows = data.ingredients.map(ing => `
+      <tr>
+        <td>${esc(ing.name)}</td>
+        <td>${fmt0(ing.estimated_grams)} g</td>
+        <td class="num">${fmt0(ing.kcal)}</td>
+        <td>${fmt1(ing.protein_g)}</td>
+        <td>${fmt1(ing.carbs_g)}</td>
+        <td>${fmt1(ing.fat_g)}</td>
+        <td>
+          <div class="conf-bar">
+            <div class="conf-bar-fill" style="width:${(ing.confidence*100).toFixed(0)}%"></div>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    wrap.innerHTML = `
+      <table style="margin-top:.5rem">
+        <thead>
+          <tr>
+            <th>Ingredient</th>
+            <th>g</th>
+            <th>kcal</th>
+            <th>protein g</th>
+            <th>carbs g</th>
+            <th>fat g</th>
+            <th>conf</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  // ── History ────────────────────────────────────────────────────────────────
+  async function loadHistory(offset = 0) {
+    histOffset = offset;
+    const limit = parseInt(document.getElementById('hist-limit').value);
+    const body  = document.getElementById('history-body');
+    const pag   = document.getElementById('pagination');
+
+    body.innerHTML = '<div class="history-empty">Loading…</div>';
+    pag.innerHTML  = '';
+
+    try {
+      const res  = await fetch(`/history?limit=${limit}&offset=${offset}`);
+      const data = await res.json();
+      const items = data.items || [];
+      const page  = data.page  || {};
+
+      if (!items.length) {
+        body.innerHTML = '<div class="history-empty">No analyses yet — upload a photo to get started.</div>';
+        return;
+      }
+
+      body.innerHTML = `
+        <div class="hist-row hist-head">
+          <span>Image</span>
+          <span>kcal</span>
+          <span>protein g</span>
+          <span>carbs g</span>
+          <span>fat g</span>
+        </div>
+        ${items.map(r => {
+          const t  = r.totals || {};
+          const fn = (r.image_path || '').split(/[\\/]/).pop();
+          return `
+            <div class="hist-row">
+              <span class="hist-img" title="${esc(r.image_path)}">🖼 ${esc(fn)}</span>
+              <span class="num">${fmt0(t.kcal)}</span>
+              <span>${fmt1(t.protein_g)}</span>
+              <span>${fmt1(t.carbs_g)}</span>
+              <span>${fmt1(t.fat_g)}</span>
+            </div>
+          `;
+        }).join('')}
+      `;
+
+      // Pagination
+      const btns = [];
+      if (offset > 0) {
+        btns.push(`<button class="btn btn-ghost" style="padding:.3rem .8rem;margin-top:0"
+          onclick="loadHistory(${offset - limit})">← Prev</button>`);
+      }
+      btns.push(`<span style="font-size:.82rem;color:var(--muted)">
+        ${offset + 1}–${offset + items.length}
+        ${page.has_more ? '' : ' (end)'}
+      </span>`);
+      if (page.has_more) {
+        btns.push(`<button class="btn btn-ghost" style="padding:.3rem .8rem;margin-top:0"
+          onclick="loadHistory(${offset + limit})">Next →</button>`);
+      }
+      pag.innerHTML = btns.join('');
+
+    } catch (err) {
+      body.innerHTML = `<div class="history-empty" style="color:#ef4444">Failed to load history: ${esc(err.message)}</div>`;
+    }
+  }
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+  let toastTimer;
+  function toast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = `show ${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const fmt0 = v => (v == null ? '—' : Number(v).toFixed(0));
+  const fmt1 = v => (v == null ? '—' : Number(v).toFixed(1));
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  loadHistory();
+</script>
+</body>
+</html>
