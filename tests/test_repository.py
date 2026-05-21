@@ -230,8 +230,23 @@ class TestListRecent:
         conn.fetch.return_value = []
         await repository.list_recent(conn)
 
-        _, limit_arg = conn.fetch.call_args.args
-        assert limit_arg == 20
+        # args: (sql, limit, offset)
+        assert conn.fetch.call_args.args[1] == 20
+
+    async def test_default_offset_is_zero(self):
+        """Calling without an explicit offset passes 0 to the query."""
+        conn = AsyncMock()
+        conn.fetch.return_value = []
+        await repository.list_recent(conn)
+
+        assert conn.fetch.call_args.args[2] == 0
+
+    async def test_custom_offset_passed_to_query(self):
+        """Caller-supplied offset reaches the SQL parameters."""
+        conn = AsyncMock()
+        conn.fetch.return_value = []
+        await repository.list_recent(conn, offset=40)
+        assert conn.fetch.call_args.args[2] == 40
 
     async def test_custom_limit_passed_to_query(self):
         """Caller-supplied limit reaches the SQL parameters."""

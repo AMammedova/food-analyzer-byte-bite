@@ -66,9 +66,20 @@ def create_app(*, lifespan_handler=lifespan) -> FastAPI:
     async def history(
         request: Request,
         limit: int = Query(default=20, ge=1, le=100),
-    ) -> list[dict[str, Any]]:
-        records = await _list_recent(request, limit=limit)
-        return [_record_json(record) for record in records]
+        offset: int = Query(default=0, ge=0),
+    ) -> dict[str, Any]:
+        rows = await _list_recent(request, limit=limit + 1, offset=offset)  # +1 for has_more probe
+        has_more = len(rows) > limit
+        items = rows[:limit]
+        return {
+            "items": [_record_json(r) for r in items],
+            "page": {
+                "limit": limit,
+                "offset": offset,
+                "returned": len(items),
+                "has_more": has_more,
+            },
+        }
 
     @app.post("/analyze", response_model=AnalysisResult)
     async def analyze_upload(
@@ -107,11 +118,13 @@ def create_app(*, lifespan_handler=lifespan) -> FastAPI:
 app = create_app()
 
 
-async def _list_recent(request: Request, *, limit: int) -> list[AnalysisRecord]:
+async def _list_recent(
+    request: Request, *, limit: int, offset: int = 0
+) -> list[AnalysisRecord]:
     if history_repo := getattr(request.app.state, "history_repo", None):
-        return await history_repo.list_recent(limit=limit)
+        return await history_repo.list_recent(limit=limit, offset=offset)
     pool = request.app.state.pool
-    return await repository.list_recent(pool, limit=limit)
+    return await repository.list_recent(pool, limit=limit, offset=offset)
 
 
 async def _save_result(request: Request, result: AnalysisResult) -> AnalysisRecord:
