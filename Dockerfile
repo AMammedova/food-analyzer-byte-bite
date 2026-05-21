@@ -24,6 +24,4 @@ USER appuser
 
 EXPOSE 8000
 
-# Switch to API server when foodanalyzer.api is implemented:
-# CMD ["uvicorn", "foodanalyzer.api:app", "--host", "0.0.0.0", "--port", "8000"]
-CMD ["python", "demo_ai.py", "--offline"]
+CMD ["uvicorn", "foodanalyzer.api:app", "--host", "0.0.0.0", "--port", "8000"]

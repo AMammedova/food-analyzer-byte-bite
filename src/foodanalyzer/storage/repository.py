@@ -66,7 +66,7 @@ _LIST_RECENT_SQL = """
 SELECT id, created_at, image_path, ingredients, totals
 FROM analyses
 ORDER BY created_at DESC, id DESC
-LIMIT $1
+LIMIT $1 OFFSET $2
 """
 
 
@@ -118,16 +118,19 @@ async def save(conn: Any, record: AnalysisRecord) -> AnalysisRecord:
     )
 
 
-async def list_recent(conn: Any, limit: int = 20) -> list[AnalysisRecord]:
+async def list_recent(
+    conn: Any, limit: int = 20, offset: int = 0
+) -> list[AnalysisRecord]:
     """Return the `limit` most recent analyses, newest first.
 
     A non-positive `limit` returns an empty list without hitting the DB,
     so callers don't need to special-case zero before querying.
+    `offset` enables page-based pagination from the API layer.
     """
     if limit <= 0:
         return []
 
-    rows = await conn.fetch(_LIST_RECENT_SQL, limit)
+    rows = await conn.fetch(_LIST_RECENT_SQL, limit, offset)
     return [_row_to_record(row) for row in rows]
 
 
