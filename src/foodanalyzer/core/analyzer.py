@@ -4,27 +4,32 @@ WHY THIS FILE EXISTS
 --------------------
 This module wires together everything:
 
-    validate → identify_ingredients → nutrition lookup → compute_totals → result
+    validate → AIService.identify_ingredients → NutritionPipeline → compute_totals → result
 
 It is intentionally separate from cli.py and api.py so that both entry
 points call the same logic. "Don't repeat yourself" for the actual work.
 
-CONCURRENCY NOTE
-----------------
-Nutrition lookups are currently sequential (one after another).
-When gulnur/service-cache-pipeline is merged, replace the sequential loop
-with:
+CONCURRENCY
+-----------
+Nutrition lookups run concurrently via `NutritionPipeline.fetch_all_nutrition`
+(asyncio.gather + bounded Semaphore + per-call retry + cache). A meal with
+N ingredients takes roughly the time of a single USDA call instead of N
+sequential calls.
 
-    from foodanalyzer.concurrency.pipeline import fetch_all_nutrition
-    facts = await fetch_all_nutrition(names, cache, provider, max_parallel)
-
-The function signature of `analyze()` is already async for this reason.
+VLM calls go through `AIService.identify_ingredients` which adds
+exponential backoff retries and a per-call timeout — provider hiccups
+don't blow up a request.
 
 DEPENDENCY INJECTION
 --------------------
-`vlm` and `nutrition` parameters default to None = "use real providers from
-env". Tests and the CLI `--offline` flag pass fake providers explicitly.
-This avoids any network calls in tests.
+Every collaborator is overridable via a keyword argument:
+
+    vlm / nutrition        — provider stubs (used by CLI --offline and tests)
+    ai_service / pipeline  — full service objects (used by the API to share
+                             a process-wide NutritionCache across requests)
+
+Defaults build fresh, single-request instances. That keeps the CLI and
+tests simple while letting the API singleton-share cache state.
 """
 
 from __future__ import annotations
@@ -32,13 +37,16 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from ai import Ingredient, NutritionFacts, compute_totals, identify_ingredients
+from ai import Ingredient, NutritionFacts, compute_totals
 from ai.nutrition import NutritionProvider, get_nutrition_provider
 from ai.providers.base import ProviderError
 
-from foodanalyzer.models import AnalysisResult, IngredientOut, TotalsOut
-from foodanalyzer.validation import ValidationError, validate_image_path
+from foodanalyzer.concurrency.pipeline import NutritionPipeline
 from foodanalyzer.config import get_settings
+from foodanalyzer.models import AnalysisResult, IngredientOut, TotalsOut
+from foodanalyzer.services.ai_service import AIService
+from foodanalyzer.services.nutrition_cache import NutritionCache
+from foodanalyzer.validation import ValidationError, validate_image_path
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +56,9 @@ async def analyze(
     *,
     vlm=None,
     nutrition: NutritionProvider | None = None,
+    ai_service: AIService | None = None,
+    pipeline: NutritionPipeline | None = None,
+    max_parallel: int | None = None,
 ) -> AnalysisResult:
     """Analyze a meal image and return structured nutrition results.
 
@@ -56,11 +67,23 @@ async def analyze(
     image_path:
         Path to a JPEG or PNG image file.
     vlm:
-        Optional VLM provider override. None = use env-configured provider.
+        Optional VLM provider override forwarded to the AI service.
         Pass an offline fake in tests / CLI --offline mode.
     nutrition:
         Optional NutritionProvider override. None = use USDAProvider from env.
-        Pass an offline fake in tests / CLI --offline mode.
+        Pass an offline fake in tests / CLI --offline mode. Ignored when
+        `pipeline` is supplied (the pipeline already owns a provider).
+    ai_service:
+        Optional pre-built AIService — pass one to share retry / timeout
+        config across requests. Defaults to a fresh AIService().
+    pipeline:
+        Optional pre-built NutritionPipeline — pass one to share a
+        process-wide NutritionCache across requests (the API does this in
+        its lifespan handler). Defaults to a fresh pipeline with a fresh
+        cache, sized by `max_parallel`.
+    max_parallel:
+        Maximum concurrent USDA calls when building a default pipeline.
+        Defaults to `settings.max_parallel`. Ignored when `pipeline` is given.
 
     Returns
     -------
@@ -72,7 +95,7 @@ async def analyze(
     ValidationError
         If the image file is missing, wrong format, or too large.
     ProviderError
-        If the VLM call fails after retries (wrapping added in ai_service PR).
+        If the VLM call fails after retries.
     """
     settings = get_settings()
     str_path = str(image_path)
@@ -80,48 +103,60 @@ async def analyze(
     # --- 1. Validate image ---------------------------------------------------
     # Raises ValidationError early — before any API call.
     validated = validate_image_path(image_path, settings.max_image_size_bytes)
-    logger.info("Analyzing image: %s", validated.name)
+    logger.info("analysis_started", extra={"image_path": validated.name})
 
-    # --- 2. Identify ingredients via VLM ------------------------------------
+    # --- 2. Identify ingredients via VLM (retries + timeout) -----------------
+    if ai_service is None:
+        ai_service = AIService()
+
     try:
-        ingredients: list[Ingredient] = identify_ingredients(str(validated), vlm=vlm)
+        ingredients: list[Ingredient] = await ai_service.identify_ingredients(
+            str(validated), vlm=vlm
+        )
     except ProviderError as exc:
-        logger.error("VLM failed for %s: %s", validated.name, exc)
+        logger.error(
+            "vlm_failed",
+            extra={"image_path": validated.name, "error": str(exc)},
+        )
         raise
 
-    # --- 3. Unknown meal path -----------------------------------------------
+    # --- 3. Unknown meal path ------------------------------------------------
     # The AI contract: empty list means meal not recognized.
     # Return structured response — no crash.
     if not ingredients:
-        logger.info("No meal recognized in %s", validated.name)
+        logger.info("no_meal_recognized", extra={"image_path": validated.name})
         return AnalysisResult(
             meal_recognized=False,
             image_path=str_path,
         )
 
-    # --- 4. Nutrition lookup (sequential for now) ----------------------------
-    # TODO: replace with fetch_all_nutrition() once pipeline PR is merged.
-    if nutrition is None:
-        nutrition = get_nutrition_provider()
+    # --- 4. Concurrent nutrition lookup (cache + semaphore + retry) ----------
+    if pipeline is None:
+        provider = nutrition if nutrition is not None else get_nutrition_provider()
+        cache = NutritionCache()
+        pipeline = NutritionPipeline(
+            provider=provider,
+            cache=cache,
+            max_parallel=max_parallel if max_parallel is not None else settings.max_parallel,
+        )
 
-    facts_by_name: dict[str, NutritionFacts] = {}
-    skipped: list[str] = []
+    ingredient_names = [ing.name for ing in ingredients]
+    facts_by_name_raw = await pipeline.fetch_all_nutrition(ingredient_names)
 
-    for ing in ingredients:
-        try:
-            facts_by_name[ing.name] = nutrition.lookup(ing.name)
-            logger.debug("Nutrition found: %s", ing.name)
-        except ProviderError as exc:
-            logger.warning("Skipping %r — nutrition lookup failed: %s", ing.name, exc)
-            skipped.append(ing.name)
-
+    facts_by_name: dict[str, NutritionFacts] = {
+        name: facts for name, facts in facts_by_name_raw.items() if facts is not None
+    }
+    skipped = [name for name, facts in facts_by_name_raw.items() if facts is None]
     if skipped:
-        logger.warning("Could not find nutrition for: %s", ", ".join(skipped))
+        logger.warning(
+            "nutrition_missing_for_ingredients",
+            extra={"ingredients": skipped, "count": len(skipped)},
+        )
 
     # --- 5. Compute totals ---------------------------------------------------
     ai_totals = compute_totals(ingredients, facts_by_name)
 
-    # --- 6. Build output models ---------------------------------------------
+    # --- 6. Build output models ----------------------------------------------
     ingredient_rows: list[IngredientOut] = []
     for ing in ingredients:
         facts = facts_by_name.get(ing.name)
@@ -155,9 +190,13 @@ async def analyze(
     )
 
     logger.info(
-        "Analysis complete: %d ingredients, %.0f kcal",
-        len(ingredient_rows),
-        totals.kcal,
+        "analysis_complete",
+        extra={
+            "image_path": validated.name,
+            "ingredient_count": len(ingredient_rows),
+            "kcal": round(totals.kcal),
+            "missing_nutrition": len(skipped),
+        },
     )
 
     return AnalysisResult(

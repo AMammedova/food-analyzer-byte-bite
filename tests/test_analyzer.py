@@ -136,3 +136,72 @@ async def test_analyze_missing_file_raises(tmp_path: Path):
     from foodanalyzer.core.analyzer import analyze
     with pytest.raises(ValidationError):
         await analyze(img, vlm=_no_meal_vlm(), nutrition=_FakeNutrition({}))
+
+
+# ---------------------------------------------------------------------------
+# Dependency injection — AIService and NutritionPipeline overrides
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_analyze_uses_injected_ai_service(tmp_path: Path):
+    """An explicit AIService passed in is used instead of building a default."""
+    from foodanalyzer.core.analyzer import analyze
+    from foodanalyzer.services.ai_service import AIService
+
+    img = tmp_path / "food.jpg"
+    img.write_bytes(b"\xff\xd8" + b"\x00" * 10)
+
+    vlm = _meal_vlm("rice")
+    nut = _FakeNutrition({"rice": _nf("rice")})
+    custom_service = AIService()
+
+    result = await analyze(img, vlm=vlm, nutrition=nut, ai_service=custom_service)
+    assert result.meal_recognized is True
+    assert result.totals.kcal == pytest.approx(100.0)
+
+
+@pytest.mark.asyncio
+async def test_analyze_uses_injected_pipeline(tmp_path: Path):
+    """A pre-built NutritionPipeline is honored instead of building a new one.
+
+    The injected pipeline owns its own cache, so calling analyze twice with
+    the same shared pipeline + provider should populate the cache after the
+    first call.
+    """
+    from foodanalyzer.concurrency.pipeline import NutritionPipeline
+    from foodanalyzer.core.analyzer import analyze
+    from foodanalyzer.services.nutrition_cache import NutritionCache
+
+    img = tmp_path / "food.jpg"
+    img.write_bytes(b"\xff\xd8" + b"\x00" * 10)
+
+    nut = _FakeNutrition({"rice": _nf("rice")})
+    cache = NutritionCache()
+    pipeline = NutritionPipeline(provider=nut, cache=cache, max_parallel=4)
+
+    result = await analyze(img, vlm=_meal_vlm("rice"), pipeline=pipeline)
+    assert result.meal_recognized is True
+    assert result.totals.kcal == pytest.approx(100.0)
+
+    cached = await cache.get("rice")
+    assert cached is not None, "the shared pipeline's cache should be populated"
+
+
+@pytest.mark.asyncio
+async def test_analyze_concurrent_lookups_for_many_ingredients(tmp_path: Path):
+    """Many ingredients are looked up concurrently and the totals are aggregated."""
+    from foodanalyzer.core.analyzer import analyze
+
+    img = tmp_path / "feast.jpg"
+    img.write_bytes(b"\xff\xd8" + b"\x00" * 10)
+
+    names = ["a", "b", "c", "d", "e"]
+    vlm = _meal_vlm(*names)
+    nut = _FakeNutrition({n: _nf(n) for n in names})
+
+    result = await analyze(img, vlm=vlm, nutrition=nut)
+
+    assert result.meal_recognized is True
+    assert len(result.ingredients) == 5
+    # 5 ingredients × 100g × 100 kcal/100g = 500
+    assert result.totals.kcal == pytest.approx(500.0)
