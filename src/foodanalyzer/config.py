@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Literal, Self
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+if TYPE_CHECKING:
+    # `Self` lives in `typing` only since Python 3.11. `from __future__ import
+    # annotations` makes the return-type annotation a string at runtime, so a
+    # TYPE_CHECKING-only import keeps mypy/pyright happy without breaking
+    # Python 3.10 at import time.
+    from typing import Self
 
 
 class Settings(BaseSettings):
