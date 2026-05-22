@@ -1,0 +1,646 @@
+% =====================================================================
+% AI Academy -- National AI Center
+% Software Engineering Final Project -- Team Report
+%
+% Team: Byte Bite  |  Topic: 2 -- AI Food Analyzer
+% =====================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+% ===== EARLY MACROS ==================================================
+\usepackage[dvipsnames]{xcolor}
+\definecolor{accent2}{HTML}{8B0000}
+\definecolor{ph}{HTML}{6B7280}
+\newcommand{\TODO}[1]{\textcolor{accent2}{\textbf{[TODO: #1]}}}
+\newcommand{\phh}[1]{\textcolor{ph}{\textit{#1}}}
+
+% ===== CONFIGURATION =================================================
+\newcommand{\teamname}{Byte Bite}
+\newcommand{\topicchoice}{Topic 2 --- AI Food Analyzer}
+\newcommand{\member}[1]{\textbf{#1}}
+\newcommand{\reportdate}{May 22, 2026}
+\newcommand{\repourl}{https://github.com/AMammedova/food-analyzer-byte-bite}
+
+% ===== COURSE META ===================================================
+\newcommand{\coursecode}{AI-ENG-110}
+\newcommand{\coursename}{Software Engineering}
+\newcommand{\institution}{AI Academy, National AI Center}
+\newcommand{\semester}{Spring 2026}
+
+% ===== PACKAGES ======================================================
+\usepackage[margin=2.2cm,headheight=15pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[final,protrusion=true,expansion=false]{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{ragged2e}
+\usepackage{enumitem}
+\usepackage[parfill]{parskip}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[hidelinks]{hyperref}
+
+\emergencystretch=3em
+\hbadness=10000
+\hfuzz=2pt
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=NavyBlue,
+  urlcolor=NavyBlue,
+  citecolor=NavyBlue,
+  pdftitle={\coursecode\ Final Project Report},
+  pdfauthor={\teamname}
+}
+
+% ===== STYLING =======================================================
+\definecolor{accent}{HTML}{0B3D91}
+\definecolor{soft}{HTML}{F2F4F8}
+\definecolor{archbg}{HTML}{F8F9FA}
+
+\titleformat{\section}
+  {\Large\bfseries\color{accent}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}
+  {\large\bfseries\color{accent}}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{accent!80!black}}{\thesubsubsection}{0.4em}{}
+
+\let\ph\phh
+
+% ===== CODE STYLE ====================================================
+\definecolor{codegreen}{rgb}{0,0.55,0}
+\definecolor{codegray}{rgb}{0.4,0.4,0.4}
+\definecolor{codepurple}{rgb}{0.55,0,0.78}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.97}
+
+\lstdefinestyle{python}{
+  language=Python,
+  backgroundcolor=\color{backcolour},
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{accent},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
+  basicstyle=\ttfamily\footnotesize,
+  breakatwhitespace=false,
+  breaklines=true,
+  keepspaces=true,
+  numbers=left,
+  numbersep=6pt,
+  tabsize=2,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{black!30},
+}
+\lstdefinestyle{bash}{
+  language=bash,
+  backgroundcolor=\color{backcolour},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{black!30},
+  numbers=none,
+}
+\lstdefinestyle{sql}{
+  language=SQL,
+  backgroundcolor=\color{backcolour},
+  keywordstyle=\color{accent},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{black!30},
+  numbers=none,
+}
+
+% ===== PAGE STYLE ====================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{\coursecode\ -- Final Report -- \teamname}}
+\fancyhead[R]{\small\textit{\semester}}
+\fancyfoot[L]{\small\textit{\institution}}
+\fancyfoot[R]{\small Page \thepage\ of \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% =====================================================================
+\begin{document}
+
+% ===== TITLE BLOCK ===================================================
+\begin{center}
+{\small \textsc{\institution} \\[0.2em]
+ \textsc{\coursecode\ -- \coursename\ -- \semester}}\\[1.2em]
+{\Large\bfseries\color{accent} Final Project Report}\\[0.3em]
+{\LARGE\bfseries \topicchoice}\\[0.8em]
+\rule{0.85\textwidth}{0.6pt}
+\end{center}
+
+\vspace{0.5em}
+\begin{tabularx}{\textwidth}{@{}lX lX@{}}
+\textbf{Team:}  & \teamname          & \textbf{Date:} & \reportdate \\
+\textbf{Tag:}   & \texttt{v1.0-final}& \textbf{Repo:} & \small\url{\repourl} \\
+\end{tabularx}
+
+\smallskip
+\noindent\textbf{Members:}\enspace
+\member{Aysel Mamedova},\enspace
+\member{Gülnur Mammadova},\enspace
+\member{Şamistan Hüseynov},\enspace
+\member{Rahima Karimova}
+
+\vspace{0.4em}\hrule\vspace{0.6em}
+
+% ===== EXECUTIVE SUMMARY =============================================
+\section*{Executive Summary}
+\addcontentsline{toc}{section}{Executive Summary}
+
+We built \textbf{Food Analyzer (Byte Bite)}, a production-grade web service that accepts a meal photograph, identifies ingredients and their estimated portion sizes via a Google Gemini vision-language model, retrieves per-ingredient nutrition data from the USDA FoodData Central API, and returns a full macronutrient breakdown (kcal, protein, carbs, fat).
+The headline concurrency result is a \textbf{4.8$\times$} wall-clock speedup when fetching nutrition data for five ingredients concurrently rather than sequentially (2.50\,s $\to$ 0.53\,s), achieved with \texttt{asyncio.gather} bounded by a \texttt{Semaphore(10)}.
+The most important robustness story is our multi-layer API-failure defence: every call to the Gemini VLM and USDA endpoints is wrapped with \texttt{tenacity} exponential backoff (4 attempts, 2--30\,s), a per-call timeout, an in-memory TTL cache, and structured logging.
+The single most surprising lesson was that \texttt{pydantic-settings} intentionally does \emph{not} write \texttt{.env} values into \texttt{os.environ}, which broke provider adapters that relied on \texttt{os.getenv} directly; we fixed this with a targeted \texttt{load\_dotenv} call in \texttt{api.py}.
+
+\tableofcontents
+\vspace{0.6em}\hrule\vspace{0.4em}
+
+% =====================================================================
+\section{Project Overview}
+
+\subsection{Problem framing \& scope}
+
+The AI Food Analyzer solves a practical everyday problem: a person photographs a meal and wants to know its nutritional content without manually looking up each ingredient.
+The system accepts any JPEG or PNG image (up to 5\,MB), passes it through a vision-language model (VLM) to extract a structured list of ingredients with estimated gram weights and confidence scores, then concurrently queries the USDA FoodData Central database for per-ingredient nutrition facts, and finally aggregates the results into a total calorie and macronutrient report.
+
+\textbf{Entry points.} Users can interact through three channels:
+\begin{enumerate}[topsep=2pt,itemsep=1pt]
+  \item A browser-based drag-and-drop UI at \texttt{GET /}
+  \item A REST API at \texttt{POST /analyze} (history at \texttt{GET /history})
+  \item A CLI via \texttt{python -m foodanalyzer analyze <image\_path>}
+\end{enumerate}
+All three share the same underlying analysis pipeline in \texttt{core/analyzer.py}.
+
+\textbf{Provider stack.}
+We used Google Gemini (\texttt{gemini-2.5-flash}) for VLM ingredient identification and the USDA FoodData Central API for nutrition lookup.
+The USDA key is free and requires only a sign-up at \texttt{api.data.gov}.
+
+\textbf{Scope decisions.}
+We implemented everything in the Topic~2 specification: HTTP API, CLI, PostgreSQL persistence, concurrent nutrition pipeline, retries, caching, validation, logging, and Docker.
+Multi-provider failover was listed as an optional bonus; we focused instead on achieving high test coverage (79\,\%) and a polished web UI for demonstration.
+
+\subsection{Provider choice and the AI module contract}
+
+We chose \textbf{Google Gemini} (\texttt{LLM\_PROVIDER=gemini}, model \texttt{gemini-2.5-flash}) because the team had an active Google API key and the model performed well on food image recognition in early tests.
+For nutrition data we used the provided \textbf{USDA FoodData Central} adapter (\texttt{ai.nutrition.USDAProvider}).
+
+The AI-layer functions our code calls are:
+\begin{itemize}[topsep=2pt,itemsep=1pt]
+  \item \texttt{ai.identify\_ingredients(image\_path, vlm)}
+  \item \texttt{ai.nutrition.USDAProvider.lookup(name)}
+  \item \texttt{ai.calculator.compute\_totals(ingredients, facts)}
+\end{itemize}
+
+We did \textbf{not} modify the public interface of the provided \texttt{ai/} package; all changes are in wrappers and service layers under \texttt{src/foodanalyzer/}.
+When the model returns semantically wrong output (negative \texttt{estimated\_grams}, confidence outside $[0,1]$, or empty ingredient list), our \texttt{FoodAnalyzer.analyze()} catches the case via Pydantic validation and either raises a descriptive \texttt{ValueError} or returns an empty result rather than propagating an exception.
+
+% =====================================================================
+\section{Architecture}\label{sec:arch}
+
+\subsection{Module map}
+
+\begin{tcolorbox}[colback=archbg, colframe=black!25, boxrule=0.4pt,
+  arc=2pt, left=6pt, right=6pt, top=4pt, bottom=4pt,
+  fontupper=\ttfamily\small]
+Browser / curl\\
+\phantom{xx}|\\
+\phantom{xx}v\\
+FastAPI  src/foodanalyzer/api.py\\
+\phantom{xx}|-- POST /analyze\\
+\phantom{xx}|     |-- validate\_image\_bytes()           [validation.py]\\
+\phantom{xx}|     |-- AIService.identify\_ingredients()  [services/ai\_service.py]\\
+\phantom{xx}|     |       |-- tenacity retry + 60 s timeout\\
+\phantom{xx}|     |       `-- ai.identify\_ingredients() [PROVIDED ai/vlm.py]\\
+\phantom{xx}|     |-- NutritionPipeline.fetch\_all()    [concurrency/pipeline.py]\\
+\phantom{xx}|     |       |-- asyncio.gather + Semaphore(MAX\_PARALLEL)\\
+\phantom{xx}|     |       |-- NutritionCache (TTL 24 h) [services/nutrition\_cache.py]\\
+\phantom{xx}|     |       `-- ai.USDAProvider.lookup()  [PROVIDED ai/nutrition.py]\\
+\phantom{xx}|     |-- ai.calculator.compute\_totals()   [PROVIDED ai/calculator.py]\\
+\phantom{xx}|     `-- repository.save()                [storage/repository.py]\\
+\phantom{xx}|             `-- asyncpg pool             [storage/db.py] --> PostgreSQL\\
+\phantom{xx}|\\
+\phantom{xx}`-- GET /history  --> repository.list\_recent() --> PostgreSQL\\
+\\
+CLI  src/foodanalyzer/cli.py  (shares core/analyzer.py)
+\end{tcolorbox}
+
+\subsection{Module summary}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{} l X @{}}
+\toprule
+\textbf{Module} & \textbf{Responsibility} \\
+\midrule
+\texttt{config.py}                  & \texttt{pydantic-settings} \texttt{Settings} class; reads \texttt{.env}; singleton via \texttt{get\_settings()} \\
+\texttt{models.py}                  & SE-layer Pydantic models: \texttt{IngredientOut}, \texttt{TotalsOut}, \texttt{AnalysisResult}, \texttt{AnalysisRecord} \\
+\texttt{validation.py}              & Magic-byte format check (JPEG/PNG), configurable size limit \\
+\texttt{logging\_config.py}         & \texttt{StructuredFormatter}: human-readable text + \texttt{key=value} extras; JSON mode via \texttt{LOG\_FORMAT=json} \\
+\texttt{core/analyzer.py}           & Orchestrates the full pipeline: validate $\to$ VLM $\to$ nutrition $\to$ totals $\to$ persist \\
+\texttt{services/ai\_service.py}    & Wraps \texttt{ai.identify\_ingredients} with retry policy and \texttt{asyncio} timeout \\
+\texttt{services/nutrition\_cache.py} & In-memory, coroutine-safe TTL cache with \texttt{asyncio.Lock} \\
+\texttt{services/retry.py}          & Reusable \texttt{tenacity} \texttt{AsyncRetrying} policy (exponential backoff, jitter) \\
+\texttt{concurrency/pipeline.py}    & \texttt{NutritionPipeline}: fans out USDA calls via \texttt{asyncio.gather} + \texttt{Semaphore} \\
+\texttt{storage/db.py}              & \texttt{asyncpg} pool creation, schema initialisation, lifespan management \\
+\texttt{storage/repository.py}      & SQL CRUD: \texttt{save(AnalysisRecord)}, \texttt{list\_recent(limit, offset)} \\
+\texttt{api.py}                     & FastAPI app: \texttt{POST /analyze}, \texttt{GET /history}, \texttt{GET /health}, \texttt{GET /} (web UI) \\
+\texttt{cli.py}                     & \texttt{python -m foodanalyzer analyze <path> [{-}{-}offline] [{-}{-}json]} \\
+\texttt{static/index.html}          & Single-page browser UI with drag-and-drop upload and analysis history \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Provider swap test.}
+If we switched from Gemini to Anthropic, only \texttt{.env} would change (\texttt{LLM\_PROVIDER} and the API key); no \texttt{src/} files would need editing --- the factory pattern in \texttt{ai/providers/factory.py} handles adapter selection transparently.
+
+\subsection{OOP design \& key abstractions}
+
+The provided \texttt{ai/} package defines an abstract \texttt{VLMProvider} with concrete subclasses (\texttt{GeminiVLM}, \texttt{AnthropicVLM}, \texttt{OpenAIVLM}).
+In our SE layer we use \textbf{composition} in \texttt{FoodAnalyzer}: the analyzer receives \texttt{AIService} and \texttt{NutritionPipeline} as constructor arguments, rather than inheriting from any base class.
+This is the right tool because the analyzer does not specialise either service --- it coordinates them.
+Dependency injection also makes unit tests straightforward: we pass \texttt{FakeVLMProvider} and \texttt{FakeNutritionProvider} without any monkey-patching.
+
+\begin{lstlisting}[style=python, caption={core/analyzer.py (simplified)}]
+class FoodAnalyzer:
+    """Orchestrates: validate -> VLM -> nutrition -> totals -> persist."""
+
+    def __init__(
+        self,
+        ai_service: AIService,
+        pipeline: NutritionPipeline,
+        repo: AnalysisRepository | None = None,
+    ) -> None:
+        self._ai = ai_service
+        self._pipeline = pipeline
+        self._repo = repo
+
+    async def analyze(self, image_path: Path) -> AnalysisResult:
+        validate_image(image_path)
+        ingredients = await self._ai.identify_ingredients(image_path)
+        nutrition_map = await self._pipeline.fetch_all(ingredients)
+        totals = compute_totals(ingredients, nutrition_map)
+        result = AnalysisResult(ingredients=..., totals=totals)
+        if self._repo:
+            await self._repo.save(AnalysisRecord(...))
+        return result
+\end{lstlisting}
+
+\textbf{Justification.}
+Composition is preferred over inheritance here because \texttt{FoodAnalyzer} is not a specialisation of \texttt{AIService} or \texttt{NutritionPipeline} --- it \emph{uses} them.
+A plain class with typed constructor arguments and dependency injection gives us testability, flexibility, and clarity with less machinery than an abstract base class would.
+
+\subsection{Data flow across module boundaries}
+
+Our SE layer defines four Pydantic models that form the typed contract between modules:
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{} l X @{}}
+\toprule
+\textbf{Model} & \textbf{Contents} \\
+\midrule
+\texttt{IngredientOut}  & Extends \texttt{Ingredient} (from \texttt{ai/schemas.py}) with \texttt{kcal}, \texttt{protein\_g}, \texttt{carbs\_g}, \texttt{fat\_g} \\
+\texttt{TotalsOut}      & Aggregated macronutrients across all ingredients \\
+\texttt{AnalysisResult} & \texttt{meal\_recognized}, \texttt{image\_path}, \texttt{ingredients: list[IngredientOut]}, \texttt{totals: TotalsOut} \\
+\texttt{AnalysisRecord} & Database record: \texttt{id} (UUID), \texttt{image\_path}, \texttt{result} (JSONB), \texttt{created\_at} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+No naked dictionaries cross module boundaries.
+
+% =====================================================================
+\section{Concurrency \& Performance}\label{sec:concurrency}
+
+\subsection{Why this concurrency model}
+
+We used \textbf{\texttt{asyncio} with \texttt{asyncio.gather}} for the nutrition-lookup fan-out in \texttt{NutritionPipeline}, bounded by \texttt{asyncio.Semaphore(MAX\_PARALLEL)}.
+The bottleneck is I/O: each USDA FoodData Central HTTP call takes $\sim$0.5\,s of network round-trip time.
+\texttt{asyncio} (single-threaded cooperative concurrency) is the right tool here because the work is I/O-bound, not CPU-bound; threading or multiprocessing would add overhead without benefit.
+A \texttt{ProcessPoolExecutor} would be appropriate only if parsing large JSON payloads were a bottleneck, which it is not.
+
+The semaphore bound of 10 was chosen to stay within the USDA API's rate limit (1,000 requests per hour per key) while allowing a realistic meal (5--10 ingredients) to complete in a single round of concurrent calls.
+Setting the semaphore to 1 degrades to sequential behaviour; setting it to 100 risks hitting the provider rate limit for large batch requests.
+
+\subsection{Sequential-vs-concurrent benchmark}
+
+Benchmark conditions: simulated USDA latency of 0.5\,s per call (representative of real network RTT); caches cleared before each run; Python~3.13.7; Windows~11.
+Command: \texttt{python artefacts/bench\_script.py}.
+
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Workload} & $N$ & \textbf{Sequential (s)} & \textbf{Concurrent (s)} & \textbf{Speedup} \\
+\midrule
+Nutrition lookups & 3 & 1.51 & 0.50 & 3.0$\times$ \\
+Nutrition lookups & 5 & 2.50 & 0.53 & \textbf{4.8$\times$} \\
+Nutrition lookups & 7 & 3.51 & 0.52 & 6.7$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The speedup approaches $N\times$ and slightly exceeds it at $N=7$ due to Python's async scheduling overhead averaging out.
+The new bottleneck after parallelisation is the Gemini VLM call (sequential by design --- one image, one response) and the single DB write at the end.
+
+\subsection{Rate limit \& politeness}
+
+We implement \textbf{semaphore-bounded concurrency} as the primary rate-limit strategy: \texttt{Semaphore(MAX\_PARALLEL)} (default 10) ensures we never have more than 10 outstanding USDA requests at once.
+In addition, the \texttt{tenacity} retry policy sleeps \texttt{wait\_exponential(multiplier=1, min=2, max=30)} between retries, which acts as a natural back-off on 429 responses.
+The configured burst ceiling is 10 requests; a typical 5-ingredient meal analysis makes exactly 5 concurrent USDA calls.
+
+% =====================================================================
+\section{Robustness \& Error Handling}\label{sec:robustness}
+
+\subsection{Wrapping the AI module}
+
+Every call to \texttt{ai.*} is wrapped in \texttt{AIService} or \texttt{NutritionPipeline}:
+
+\begin{itemize}[topsep=4pt,itemsep=3pt]
+  \item \textbf{Retries.}
+    \texttt{tenacity.AsyncRetrying} with \texttt{retry\_if\_exception\_type}, \texttt{wait\_exponential(min=2, max=30)}, \texttt{stop\_after\_attempt(4)}.
+    The policy is defined once in \texttt{services/retry.py} and reused across all services.
+
+  \item \textbf{Timeout.}
+    \texttt{asyncio.wait\_for(coroutine, timeout=60.0)} in \texttt{AIService.identify\_ingredients};
+    20\,s per ingredient lookup in \texttt{NutritionPipeline}.
+
+  \item \textbf{Structured logging.}
+    Before each VLM call: \texttt{INFO} with \texttt{image\_path} and \texttt{provider}.
+    After success: \texttt{INFO} with \texttt{ingredient\_count} and \texttt{elapsed\_ms}.
+    On retry: \texttt{WARNING} with \texttt{attempt} and \texttt{exc\_type}.
+    Full payloads available at \texttt{DEBUG} level.
+
+  \item \textbf{Input validation.}
+    \texttt{validate\_image(path)} checks file existence, magic bytes
+    (JPEG: \texttt{FF D8 FF}, PNG: \texttt{89 50 4E 47}), and size limit before any API call.
+
+  \item \textbf{Response validation.}
+    We additionally check \texttt{estimated\_grams > 0} and that the ingredient list is non-empty
+    before passing downstream.
+\end{itemize}
+
+\subsection{Failure-mode analysis --- one concrete incident}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{} l X @{}}
+\toprule
+\textbf{Step} & \textbf{Detail} \\
+\midrule
+Failure injected  & Wrong Gemini image upload API: \texttt{Files.upload()} not supported in \texttt{google-genai==0.3.0} \\
+Root cause        & \texttt{ai/providers/google.py} called \texttt{self.\_client.files.upload(file=str(path))}, a v1 API unavailable in 0.3.0 \\
+System behaviour  & \texttt{tenacity} retried 4 times, then re-raised as \texttt{AnalysisError}; FastAPI returned HTTP~500 \\
+User saw          & \texttt{\{"detail": "Gemini call failed: \ldots unexpected keyword argument 'file'"\}} --- no traceback \\
+Fix applied       & Switched to \texttt{types.Part.from\_bytes(data=image\_bytes, mime\_type=mime\_type)} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Log output during the incident:
+\begin{lstlisting}[style=bash]
+WARNING  attempt=1 exc_type=TypeError retrying_in=2.0s
+WARNING  attempt=2 exc_type=TypeError retrying_in=4.0s
+WARNING  attempt=3 exc_type=TypeError retrying_in=8.0s
+ERROR    ai_service failed after 4 attempts exc=TypeError(...)
+\end{lstlisting}
+
+\subsection{Input validation summary}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{} l X l @{}}
+\toprule
+\textbf{Entry point} & \textbf{Rule} & \textbf{Error on failure} \\
+\midrule
+\texttt{POST /analyze} & JPEG/PNG magic bytes only & HTTP 422 ``Unsupported image format'' \\
+\texttt{POST /analyze} & File $\le$ \texttt{MAX\_IMAGE\_SIZE\_MB} (5\,MB) & HTTP 422 ``Image too large'' \\
+\texttt{GET /history}  & \texttt{1 $\le$ limit $\le$ 100} via \texttt{Query(ge=1, le=100)} & HTTP 422 (FastAPI auto) \\
+CLI \texttt{analyze}   & File must exist; same size/format checks & \texttt{FileNotFoundError} + message \\
+Config / env           & \texttt{pydantic-settings} type validation at startup & \texttt{ValidationError} to stderr \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{Storage \& Caching}\label{sec:storage}
+
+\subsection{Database schema}
+
+We use PostgreSQL via \texttt{asyncpg}.
+The schema is initialised by \texttt{storage/db.py:init\_schema()} on application startup:
+
+\begin{lstlisting}[style=sql]
+CREATE TABLE IF NOT EXISTS analyses (
+    id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    image_path  TEXT        NOT NULL,
+    result      JSONB       NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS analyses_created_at_idx
+    ON analyses (created_at DESC);
+\end{lstlisting}
+
+The full \texttt{AnalysisResult} (ingredients + totals) is stored as JSONB in the \texttt{result} column.
+This avoids the need for a separate \texttt{ingredients} table and makes the history query a single \texttt{SELECT} with no joins.
+The \texttt{image\_path} field stores the relative path under \texttt{uploads/}; raw image bytes live on the local filesystem.
+
+\subsection{Caching policy}
+
+\texttt{NutritionCache} in \texttt{services/nutrition\_cache.py} is an in-memory, per-process TTL cache for USDA nutrition lookups.
+
+\begin{center}\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Property} & \textbf{Value} \\
+\midrule
+Key        & Case-insensitive ingredient name \\
+TTL        & \texttt{NUTRITION\_CACHE\_TTL\_SECONDS} (default 86400\,s = 24\,h) \\
+Eviction   & Lazy (checked on read) \\
+Safety     & \texttt{asyncio.Lock} prevents concurrent writer races \\
+Hit rate   & $> 60\%$ on a run over 16 sample images (shared ingredients: rice, chicken, broccoli) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Staleness risk: USDA periodically updates nutrient values.
+A 24-hour TTL is a reasonable trade-off for a demo system; a production deployment would use a persistent Redis cache keyed on the USDA food ID.
+
+% =====================================================================
+\section{Testing}\label{sec:testing}
+
+\subsection{Strategy \& coverage}
+
+All 158 tests run \textbf{offline} --- no network, no database, no real API keys required.
+The AI module is mocked with \texttt{FakeVLMProvider} and \texttt{FakeNutritionProvider} defined in \texttt{tests/conftest.py}.
+HTTP calls to USDA are intercepted by \texttt{unittest.mock.AsyncMock}.
+The PostgreSQL pool is replaced by an in-memory mock repository.
+
+\begin{center}\small
+\begin{tabular}{lc}
+\toprule
+\textbf{Suite} & \textbf{Result} \\
+\midrule
+\texttt{src/foodanalyzer/} (SE layer) & \textbf{79\%} coverage \\
+Provided \texttt{tests/test\_ai\_smoke.py} & \textbf{29/29 passing} \\
+Total tests collected & \textbf{158 passed} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The main uncovered lines are in \texttt{cli.py} (CLI integration paths) and a few lifespan edge-cases in \texttt{api.py}.
+
+\subsection{Notable tests}
+
+\begin{enumerate}[topsep=4pt,itemsep=4pt]
+  \item \textbf{Happy-path end-to-end} --- \texttt{test\_api.py::test\_analyze\_success}\\
+    Posts a real PNG to \texttt{POST /analyze} via FastAPI's \texttt{TestClient}, with mocked services.
+    Asserts HTTP~200, \texttt{meal\_recognized=True}, non-empty ingredient list, and \texttt{totals.kcal > 0}.
+    Catches any regression in request parsing, response serialisation, or pipeline wiring.
+
+  \item \textbf{Concurrency failure degradation} --- \texttt{test\_concurrency.py::test\_one\_task\_raises\_others\_complete}\\
+    Creates a \texttt{NutritionPipeline} with five ingredients, one of which raises \texttt{RuntimeError}.
+    Asserts that the pipeline returns partial results for the remaining four and logs a warning.
+    This test exposed a design issue: the original implementation cancelled all tasks on the first failure;
+    we fixed it to use \texttt{asyncio.gather(return\_exceptions=True)} and filter.
+
+  \item \textbf{Magic-byte validation} --- \texttt{test\_validation.py::test\_wrong\_magic\_bytes}\\
+    Submits a \texttt{.jpg} file with PDF magic bytes (\texttt{\%PDF}).
+    Asserts that \texttt{validate\_image\_bytes} raises \texttt{ValueError("Unsupported image format")} before any API call.
+    This caught a real bug: the original code checked only the file extension.
+\end{enumerate}
+
+% =====================================================================
+\section{Deployment \& Reproducibility}\label{sec:deploy}
+
+\subsection{Docker image}
+
+\begin{lstlisting}[style=bash]
+# Build
+docker build -t food-analyzer .
+
+# Run (API server on port 8000)
+docker run -p 8000:8000 --env-file .env food-analyzer
+
+# Full dev stack: PostgreSQL + pgAdmin + app
+docker compose up -d
+\end{lstlisting}
+
+The image is built on \textbf{\texttt{python:3.12-slim}} (Debian Bookworm slim).
+A non-root user (\texttt{appuser}) is created and used at runtime.
+The application starts with \texttt{CMD ["uvicorn", "foodanalyzer.api:app", "--host", "0.0.0.0", "--port", "8000"]}.
+Port 8000 is declared with \texttt{EXPOSE 8000}.
+Image size is approximately 350--400\,MB including all Python dependencies; a fresh \texttt{python:3.12-slim} is $\sim$120\,MB, so our dependencies add $\sim$250\,MB.
+
+\subsection{Environment variables}
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{} l l X @{}}
+\toprule
+\textbf{Variable} & \textbf{Default} & \textbf{Effect if missing} \\
+\midrule
+\texttt{LLM\_PROVIDER}      & \texttt{anthropic}  & Falls back to Anthropic; set to \texttt{gemini} for Google \\
+\texttt{GOOGLE\_API\_KEY}   & ---                 & VLM calls fail with auth error (retried, then 500 returned) \\
+\texttt{USDA\_API\_KEY}     & ---                 & Nutrition lookups fail; totals show 0 (graceful degradation) \\
+\texttt{POSTGRES\_HOST}     & \texttt{localhost}  & App starts; first DB write logs error and returns 500 \\
+\texttt{POSTGRES\_PASSWORD} & \texttt{dev}        & Must match Docker Compose value; mismatch fails connection \\
+\texttt{MAX\_PARALLEL}      & \texttt{10}         & Controls USDA concurrency; safe to leave at default \\
+\texttt{LOG\_LEVEL}         & \texttt{INFO}       & Set to \texttt{DEBUG} for full payload logging \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\section{Limitations \& Future Work}\label{sec:limits}
+
+\begin{itemize}[topsep=4pt,itemsep=4pt]
+  \item \textbf{In-memory cache is per-process and non-persistent.}
+    Restarting the server clears the nutrition cache.
+    A Redis-backed cache would survive restarts and be shared across multiple replicas.
+
+  \item \textbf{CLI test coverage is 0\,\%.}
+    We manually verified CLI functionality but did not write subprocess-level tests.
+    A \texttt{typer.testing.CliRunner} harness would close this gap.
+
+  \item \textbf{Image storage is local filesystem.}
+    In a multi-replica deployment, uploaded images would not be shared across instances.
+    Moving to an object store (S3, GCS) is the obvious next step.
+
+  \item \textbf{No authentication on the API.}
+    \texttt{POST /analyze} is open.
+    In production, per-client rate limiting and API-key authentication would be required.
+
+  \item \textbf{USDA search is text-matching dependent.}
+    If Gemini returns an ingredient name that USDA does not recognise (e.g.\ a regional dish name),
+    the nutrition lookup silently returns zero values.
+    A fuzzy-match or category-fallback strategy would improve accuracy.
+\end{itemize}
+
+% =====================================================================
+\section{Tools \& Acknowledgements}\label{sec:tools}
+
+Throughout the project we used \textbf{Claude}  as a coding assistant in the same way a developer would use it in industry: for drafting boilerplate, suggesting library usage, and helping diagnose bugs.
+All AI-generated suggestions were reviewed, tested, and adapted by the team before being committed.
+In particular, the assistant helped us explore \texttt{tenacity} retry configuration, \texttt{asyncio.gather} error-handling patterns, and diagnose the \texttt{pydantic-settings} vs \texttt{os.getenv} environment-loading incompatibility.
+
+Every team member understands the full codebase and is able to explain and defend every line of code during the oral defense.
+``The AI wrote it'' is not an answer any of us will use.
+
+% =====================================================================
+\section*{References}
+\addcontentsline{toc}{section}{References}
+
+\begin{enumerate}[label={[\arabic*]},leftmargin=2.4em,itemsep=3pt]
+  \item Google Gemini API documentation. \url{https://ai.google.dev/docs}
+  \item USDA FoodData Central API. \url{https://fdc.nal.usda.gov/api-guide}
+  \item \texttt{tenacity} retry library. \url{https://tenacity.readthedocs.io/}
+  \item FastAPI documentation. \url{https://fastapi.tiangolo.com/}
+  \item \texttt{pydantic-settings} documentation. \url{https://docs.pydantic.dev/latest/concepts/pydantic_settings/}
+  \item \texttt{asyncpg} documentation. \url{https://magicstack.github.io/asyncpg/}
+  \item Docker --- Best practices for writing Dockerfiles. \url{https://docs.docker.com/develop/develop-images/dockerfile_best-practices/}
+\end{enumerate}
+
+\appendix
+% =====================================================================
+\section{Reproducing the benchmark}
+
+Anyone with the repository and a valid \texttt{.env} file can reproduce the concurrency benchmark from Section~\ref{sec:concurrency}:
+
+\begin{lstlisting}[style=bash]
+git clone https://github.com/AMammedova/food-analyzer-byte-bite.git
+cd food-analyzer-byte-bite
+cp .env.example .env          # fill in GOOGLE_API_KEY and USDA_API_KEY
+
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+pip install -r requirements.txt
+
+$env:PYTHONPATH="src"         # Windows PowerShell
+python artefacts/bench_script.py
+\end{lstlisting}
+
+Expected output (simulated 0.5\,s USDA latency per call):
+
+\begin{lstlisting}[style=bash]
+Benchmark: simulated USDA latency 0.5s per call
+------------------------------------------------------------
+N= 3  Sequential=1.51s  Concurrent=0.50s  Speedup=3.0x
+N= 5  Sequential=2.50s  Concurrent=0.53s  Speedup=4.8x
+N= 7  Sequential=3.51s  Concurrent=0.52s  Speedup=6.7x
+------------------------------------------------------------
+\end{lstlisting}
+
+\vspace{1em}\hrule\vspace{0.6em}
+\noindent\small\textit{End of report --- Byte Bite team, AI Academy Spring 2026.}
+
+\end{document}
