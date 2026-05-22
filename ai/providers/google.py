@@ -96,10 +96,14 @@ class GeminiVLM(VLMProvider):
         try:
             from google.genai import types  # type: ignore
 
-            uploaded = self._client.files.upload(file=str(path))
+            suffix = path.suffix.lower()
+            mime_type = "image/png" if suffix == ".png" else "image/jpeg"
+            image_bytes = path.read_bytes()
+            image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+
             resp = self._client.models.generate_content(
                 model=self.model,
-                contents=[uploaded, full_prompt],
+                contents=[image_part, full_prompt],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json" if json_schema else None,
                 ),
