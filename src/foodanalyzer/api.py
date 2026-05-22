@@ -3,6 +3,16 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path as _Path
+
+# Load .env into os.environ so that ai/ provider modules (which use os.getenv
+# directly) pick up LLM_PROVIDER, GOOGLE_API_KEY, etc. without needing the
+# variables to be exported in the shell before running uvicorn.
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    _load_dotenv(_Path(__file__).parents[2] / ".env", override=False)
+except ImportError:
+    pass
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
