@@ -24,9 +24,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ai/ ./ai/
 COPY src/ ./src/
 COPY data/ ./data/
-COPY uploads/ ./uploads/
 
 RUN useradd --create-home --shell /bin/bash appuser \
+    && mkdir -p /app/uploads \
     && chown -R appuser:appuser /app
 
 USER appuser
