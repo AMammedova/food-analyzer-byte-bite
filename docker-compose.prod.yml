@@ -1,0 +1,73 @@
+# Production stack: API + PostgreSQL
+#
+#   cp .env.example .env    # fill API keys and set POSTGRES_PASSWORD
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# App UI: http://<server>:8000
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: foodanalyzer-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-foodanalyzer}
+    volumes:
+      - foodanalyzer_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-foodanalyzer}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - foodanalyzer-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: food-analyzer:latest
+    container_name: foodanalyzer-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - foodanalyzer_uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - foodanalyzer-net
+
+networks:
+  foodanalyzer-net:
+    driver: bridge
+
+volumes:
+  foodanalyzer_pgdata:
+  foodanalyzer_uploads:
