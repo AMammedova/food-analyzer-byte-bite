@@ -3,25 +3,35 @@
 % Software Engineering Final Project -- Presentation Deck
 %
 % Team: Byte Bite  |  Topic: 2 -- AI Food Analyzer
-% Compile with pdfLaTeX (Overleaf recommended)
+% Compile with pdfLaTeX
+%
+% SLIDE ORDER & SPEAKERS:
+%   Slides 1-3   Aysel Mamedova     (Introduction + Design)
+%   Slides 4-6   Rahima Karimova    (Architecture + Storage + Logging)
+%   Slides 7-9   Gulnur Mammadova   (Concurrency + AI Service + Cache)
+%   Slides 10-12 Samistan Husaynov  (Demo + Testing + Contributions)
+%   Slide 13     All four           (Q&A)
 % =====================================================================
 
 \PassOptionsToPackage{dvipsnames}{xcolor}
-\documentclass[aspectratio=169,11pt]{beamer}
+\documentclass[aspectratio=169,10pt]{beamer}
 
 % ===== CONFIGURATION =================================================
 \newcommand{\teamname}{Byte Bite}
 \newcommand{\topicchoice}{Topic 2 --- AI Food Analyzer}
 \newcommand{\memberone}{Aysel Mamedova}
-\newcommand{\membertwo}{Gülnur Məmmədova}
-\newcommand{\memberthree}{Şəmistan Hüseynov}
-\newcommand{\memberfour}{Rəhimə Kərimova}
+\newcommand{\membertwo}{Gülnur Mammadova}
+\newcommand{\memberthree}{Şamistan Hüseynov}
+\newcommand{\memberfour}{Rahima Karimova}
 \newcommand{\repolink}{github.com/AMammedova/food-analyzer-byte-bite}
 
 \newcommand{\coursecode}{AI-ENG-110}
 \newcommand{\coursename}{Software Engineering}
 \newcommand{\institution}{AI Academy, National AI Center}
 \newcommand{\semester}{Spring 2026}
+
+% Speaker label shown right-aligned inside the blue title bar
+\newcommand{\speaker}[1]{\hfill{\normalfont\footnotesize\itshape #1}}
 
 % ===== PACKAGES ======================================================
 \usepackage[T1]{fontenc}
@@ -32,11 +42,14 @@
 \usepackage{listings}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds,shapes.geometric}
+\usepackage{graphicx}
+\graphicspath{{./}}
 
 % ===== BEAMER THEME ==================================================
 \usetheme{default}
 \usefonttheme{professionalfonts}
 \setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=8mm,text margin right=8mm}
 
 \definecolor{accent}{HTML}{0B3D91}
 \definecolor{soft}{HTML}{EEF2FF}
@@ -57,19 +70,21 @@
 \setbeamerfont{frametitle}{size=\large,series=\bfseries}
 \setbeamerfont{footline}{size=\tiny}
 
-% Frametitle padding
 \setbeamertemplate{frametitle}{
-  \vspace{0.2em}
+  \vspace{0.12em}
   \insertframetitle
-  \vspace{0.1em}
+  \vspace{0.05em}
 }
 
-% Footer
 \setbeamertemplate{footline}{%
   \leavevmode
-  \hbox{\hspace*{2ex}\tiny\color{gray}\textit{\teamname{} --- \topicchoice{}}\hfill
-  \tiny\color{gray}\textit{\coursecode{} --- \semester{}}\hfill
-  \tiny\color{gray}\insertframenumber/\inserttotalframenumber\hspace*{2ex}}
+  \hbox{%
+    \hspace*{2ex}\tiny\color{gray}\textit{\teamname{} --- \topicchoice{}}%
+    \hfill
+    \tiny\color{gray}\textit{\coursecode{} --- \semester{}}%
+    \hfill
+    \tiny\color{gray}\insertframenumber\,/\,\inserttotalframenumber\hspace*{2ex}%
+  }%
   \vskip2pt
 }
 
@@ -86,15 +101,18 @@
   rulecolor=\color{accent!40},
   numbers=none,
 }
+
 \lstdefinestyle{bashsmall}{
   language=bash,
   backgroundcolor=\color{soft},
-  basicstyle=\ttfamily\scriptsize,
+  basicstyle=\ttfamily\tiny,
   breaklines=true,
   frame=single,
   framerule=0.4pt,
   rulecolor=\color{accent!40},
   numbers=none,
+  aboveskip=0.2em,
+  belowskip=0.2em
 }
 
 % =====================================================================
@@ -106,7 +124,7 @@
 \setbeamercolor{background canvas}{bg=accent}
 \begin{frame}[plain]
   \begin{center}
-    \vspace{0.5cm}
+    \vspace{0.45cm}
     {\small\color{white!80!accent} \textsc{\institution}}\\[0.3em]
     {\small\color{white!80!accent} \textsc{\coursecode{} --- \coursename{} --- \semester{}}}\\[1em]
     \textcolor{white}{\rule{0.65\textwidth}{0.5pt}}\\[0.6em]
@@ -118,7 +136,7 @@
       \memberone\ \textbullet\
       \membertwo\ \textbullet\
       \memberthree\ \textbullet\
-      \memberfour}\\[0.8cm]
+      \memberfour}\\[0.7cm]
     {\footnotesize\color{white!70!accent} Final Project Defense --- May 2026}\\[0.2em]
     {\footnotesize\color{white!70!accent}\texttt{\repolink}}
   \end{center}
@@ -126,51 +144,79 @@
 }
 
 % ========== SLIDE 2: PROBLEM =========================================
-\begin{frame}{The Problem}
+\begin{frame}{The Problem \& What We Built\speaker{Aysel Mamedova}}
+  \small
   \begin{block}{Core idea}
     A user uploads a meal photo. The system identifies ingredients with portion sizes,
-    looks up nutrition data from USDA, and returns \textbf{calories + macronutrients} — all in under 2 seconds.
+    looks up nutrition data from USDA, and returns \textbf{calories + macronutrients} in under 2 seconds.
   \end{block}
 
-  \vspace{0.6em}
+  \vspace{0.4em}
   \begin{columns}[T,onlytextwidth]
     \column{0.46\textwidth}
       \textbf{\color{accent}Input}
-      \begin{itemize}\setlength\itemsep{0.25em}
-        \item Meal photo (JPEG / PNG, \(\le\)5\,MB)
-        \item Validated at magic-byte level — not just extension
+      \begin{itemize}\setlength\itemsep{0.2em}
+        \item Meal photo JPEG / PNG, \(\le\)5\,MB
+        \item Validated at magic-byte level
       \end{itemize}
-      \vspace{0.5em}
+
+      \vspace{0.4em}
       \textbf{\color{accent}Entry Points}
-      \begin{itemize}\setlength\itemsep{0.25em}
-        \item \texttt{GET /} \quad Web UI (drag-and-drop)
+      \begin{itemize}\setlength\itemsep{0.2em}
+        \item \texttt{GET /} \quad Web UI (drag \& drop)
         \item \texttt{POST /analyze} \quad REST API
-        \item \texttt{python -m foodanalyzer analyze} \quad CLI
+        \item \texttt{python -m foodanalyzer} \quad CLI
       \end{itemize}
 
     \column{0.50\textwidth}
       \textbf{\color{accent}Output per Ingredient}
-      \begin{itemize}\setlength\itemsep{0.25em}
+      \begin{itemize}\setlength\itemsep{0.2em}
         \item Name + estimated grams
         \item kcal, protein, carbs, fat
-        \item Confidence score from VLM
+        \item Confidence score from Gemini VLM
       \end{itemize}
+
       \vspace{0.4em}
       \textbf{\color{accent}Persistence}
-      \begin{itemize}\setlength\itemsep{0.25em}
+      \begin{itemize}\setlength\itemsep{0.2em}
         \item Every analysis saved to PostgreSQL
         \item History: \texttt{GET /history?limit=N}
       \end{itemize}
   \end{columns}
 \end{frame}
 
-% ========== SLIDE 3: ARCHITECTURE ====================================
-\begin{frame}{Architecture}
+% ========== SLIDE 3: DESIGN DECISIONS ================================
+\begin{frame}{Three Design Decisions We Can Defend\speaker{Aysel Mamedova}}
+  \small
+  \begin{enumerate}\setlength\itemsep{0.55em}
+    \item \textbf{Composition over inheritance in \texttt{FoodAnalyzer}}
+      \begin{itemize}
+        \item \texttt{FoodAnalyzer} receives \texttt{AIService}, \texttt{NutritionPipeline}, \texttt{Repository} as constructor args
+        \item \textit{Why:} it \emph{uses} them, not \emph{extends} them --- dependency injection makes unit tests trivial
+      \end{itemize}
 
-  \vspace{-0.2em}
+    \item \textbf{asyncio over threading for USDA fan-out}
+      \begin{itemize}
+        \item USDA lookups are I/O-bound (\(\approx\)500\,ms each) --- zero CPU work
+        \item \textit{Rejected:} \texttt{ThreadPoolExecutor} (GIL contention, memory overhead)
+      \end{itemize}
+
+    \item \textbf{pydantic-settings for typed configuration}
+      \begin{itemize}
+        \item One \texttt{Settings} class reads \texttt{.env}, validates types, \textbf{fails fast} at startup
+        \item \textit{Alternative rejected:} scattered \texttt{os.getenv()} that silently returns \texttt{None}
+      \end{itemize}
+  \end{enumerate}
+\end{frame}
+
+% ========== SLIDE 4: ARCHITECTURE ====================================
+\begin{frame}{Architecture\speaker{Rahima Karimova}}
+  \vspace{-0.4em}
   \begin{center}
   \begin{tikzpicture}[
-    font=\scriptsize,
+    scale=0.85,
+    transform shape,
+    font=\tiny,
     node distance=4mm and 6mm,
     every node/.style={align=center},
     entry/.style={draw,rounded corners=3pt,fill=oklight,draw=ok,thick,
@@ -181,19 +227,15 @@
                   minimum width=6cm,minimum height=0.7cm},
     arrow/.style={-Stealth,thick,color=accent!70}
   ]
-    % Row 0: entry points
     \node[entry] (browser) {Browser / curl};
     \node[entry,right=8mm of browser] (cli) {CLI};
 
-    % Row 1: API
     \node[sebox,below=6mm of browser,xshift=14mm] (api)
       {FastAPI \texttt{api.py}};
 
-    % Row 2: core
     \node[sebox,below=5mm of api] (core)
       {\texttt{FoodAnalyzer}\\core/analyzer.py};
 
-    % Row 3: services
     \node[sebox,below=5mm of core,xshift=-20mm] (svc)
       {\texttt{AIService}\\retry + 60\,s timeout};
     \node[sebox,right=6mm of svc] (cache)
@@ -201,76 +243,117 @@
     \node[sebox,right=6mm of cache] (pip)
       {\texttt{NutritionPipeline}\\asyncio + Sem(10)};
 
-    % Row 4: storage + AI
-    \node[sebox,below=5mm of svc,xshift=0mm] (repo)
+    \node[sebox,below=5mm of svc] (repo)
       {\texttt{Repository}\\asyncpg \(\to\) PostgreSQL};
     \node[aibox,below=5mm of cache,xshift=14mm] (ai)
       {\textbf{provided \texttt{ai/}} \quad Gemini VLM + USDA + calculator};
 
-    % Arrows
     \draw[arrow] (browser) -- (api);
-    \draw[arrow] (cli)     -- (api);
-    \draw[arrow] (api)     -- (core);
-    \draw[arrow] (core)    -- (svc);
-    \draw[arrow] (core)    -- (pip);
-    \draw[arrow] (svc)     -- (cache);
-    \draw[arrow] (pip)     -- (cache);
-    \draw[arrow] (core)    -- (repo);
-    \draw[arrow] (svc)     -- (ai);
-    \draw[arrow] (cache)   -- (ai);
-    \draw[arrow] (pip)     -- (ai);
+    \draw[arrow] (cli) -- (api);
+    \draw[arrow] (api) -- (core);
+    \draw[arrow] (core) -- (svc);
+    \draw[arrow] (core) -- (pip);
+    \draw[arrow] (svc) -- (cache);
+    \draw[arrow] (pip) -- (cache);
+    \draw[arrow] (core) -- (repo);
+    \draw[arrow] (svc) -- (ai);
+    \draw[arrow] (cache) -- (ai);
+    \draw[arrow] (pip) -- (ai);
 
-    % AI boundary label
     \node[font=\tiny\itshape\color{aiborder},above right=0mm and 0mm of ai]
-      {provided — not modified};
+      {provided, not modified};
   \end{tikzpicture}
   \end{center}
 
-  \vspace{0.1em}
+  \vspace{-0.1em}
   {\footnotesize
   \textcolor{ok}{\rule{0.7em}{0.7em}} Entry point \quad
   \textcolor{accent}{\rule{0.7em}{0.7em}} Our SE layer \quad
   \textcolor{aiborder}{\rule{0.7em}{0.7em}} Provided \texttt{ai/} package}
-
 \end{frame}
 
-% ========== SLIDE 4: DESIGN DECISIONS ================================
-\begin{frame}{Three Design Decisions We Can Defend}
-
-  \begin{enumerate}\setlength\itemsep{0.8em}
-    \item \textbf{Composition over inheritance in \texttt{FoodAnalyzer}}
-      \begin{itemize}
-        \item \texttt{FoodAnalyzer} receives \texttt{AIService} + \texttt{NutritionPipeline} as constructor args
-        \item \textit{Why:} it \emph{uses} them, not specialises them — dependency injection makes unit tests trivial
+% ========== SLIDE 5: STORAGE & DATABASE ==============================
+\begin{frame}{Storage \& Database\speaker{Rahima Karimova}}
+  \small
+  \begin{columns}[T,onlytextwidth]
+    \column{0.50\textwidth}
+      \textbf{\color{accent}PostgreSQL via asyncpg}
+      \begin{itemize}\setlength\itemsep{0.22em}
+        \item Fully async --- no blocking threads
+        \item Connection pool created at startup, closed at shutdown (FastAPI lifespan)
       \end{itemize}
 
-    \item \textbf{asyncio over threading for USDA fan-out}
-      \begin{itemize}
-        \item USDA lookups are I/O-bound (\(\sim\)500\,ms each) — asyncio has zero OS-thread overhead
-        \item \textit{Rejected:} \texttt{ThreadPoolExecutor} (GIL contention), \texttt{ProcessPoolExecutor} (CPU-bound only)
+      \vspace{0.4em}
+      \textbf{\color{accent}Schema: \texttt{analyses} table}
+      \begin{itemize}\setlength\itemsep{0.2em}
+        \item \texttt{id} \quad UUID primary key
+        \item \texttt{image\_path} \quad TEXT
+        \item \texttt{result} \quad JSONB (full nutrition response)
+        \item \texttt{created\_at} \quad TIMESTAMP, indexed \texttt{DESC}
       \end{itemize}
 
-    \item \textbf{pydantic-settings for typed configuration}
-      \begin{itemize}
-        \item One \texttt{Settings} class reads \texttt{.env}, validates types, fails fast at startup
-        \item \textit{Alternative rejected:} scattered \texttt{os.getenv()} — no types, no early validation
+    \column{0.47\textwidth}
+      \textbf{\color{accent}Why JSONB instead of a normalized schema?}
+      \begin{itemize}\setlength\itemsep{0.22em}
+        \item Requirements do not ask SQL filtering by ingredient name
+        \item Single \texttt{SELECT}, no joins --- faster reads, simpler code
+        \item Deliberate trade-off: acceptable for our use case
       \end{itemize}
-  \end{enumerate}
 
+      \vspace{0.4em}
+      \textbf{\color{accent}Repository class}
+      \begin{itemize}\setlength\itemsep{0.2em}
+        \item \texttt{save(result)} --- writes one row
+        \item \texttt{list\_recent(limit, offset)} --- paginated history
+      \end{itemize}
+  \end{columns}
 \end{frame}
 
-% ========== SLIDE 5: CONCURRENCY =====================================
-\begin{frame}{Concurrency: the Benchmark}
+% ========== SLIDE 6: ORCHESTRATION & LOGGING =========================
+\begin{frame}{Core Orchestration \& Structured Logging\speaker{Rahima Karimova}}
+  \small
+  \begin{columns}[T,onlytextwidth]
+    \column{0.50\textwidth}
+      \textbf{\color{accent}FoodAnalyzer.analyze() --- 4 steps}
+      \begin{enumerate}\setlength\itemsep{0.3em}
+        \item Validate image bytes (magic-byte check)
+        \item Call \texttt{AIService} \(\to\) Gemini VLM \emph{(slowest step)}
+        \item Fan out: \texttt{NutritionPipeline.fetch\_all()} in parallel
+        \item Save to PostgreSQL, return result
+      \end{enumerate}
 
+      \vspace{0.3em}
+      \textit{Every entry point --- Web, API, CLI --- goes through this same 4-step flow.}
+
+    \column{0.47\textwidth}
+      \textbf{\color{accent}StructuredFormatter (logging\_config.py)}
+      \begin{itemize}\setlength\itemsep{0.22em}
+        \item Every log carries: \texttt{elapsed\_ms}, \texttt{ingredient\_count},
+              \texttt{attempt}, \texttt{exc\_type}
+        \item Default: human-readable text for development
+        \item \texttt{LOG\_FORMAT=json} \(\to\) machine-readable JSON
+      \end{itemize}
+
+      \vspace{0.3em}
+      \begin{block}{Why structured logging?}
+        \small In production you search by field, not grep strings.
+        Our logs support that from day one.
+      \end{block}
+  \end{columns}
+\end{frame}
+
+% ========== SLIDE 7: CONCURRENCY =====================================
+\begin{frame}{Concurrency: the Benchmark\speaker{Gülnur Mammadova}}
+  \small
   \textbf{How it works:}
   \texttt{NutritionPipeline.fetch\_all()} fans out \(N\) USDA lookups via
   \texttt{asyncio.gather}, bounded by \texttt{Semaphore(MAX\_PARALLEL=10)}.
 
-  \vspace{0.6em}
+  \vspace{0.5em}
   \begin{columns}[T,onlytextwidth]
     \column{0.50\textwidth}
     \begin{center}\small
-    \begin{tabular}{lcccr}
+    \begin{tabular}{lccc}
       \toprule
       $N$ & \textbf{Sequential} & \textbf{Concurrent} & \textbf{Speedup} \\
       \midrule
@@ -280,220 +363,233 @@
       \bottomrule
     \end{tabular}
     \end{center}
-    {\footnotesize Conditions: simulated 0.5\,s USDA RTT, caches cleared,\\Python 3.13.7, Windows 11}
+    {\footnotesize Conditions: simulated 0.5\,s USDA RTT, caches cleared, Python 3.13.7, Windows 11}
 
     \column{0.47\textwidth}
     \textbf{New bottleneck after parallelisation:}
-    \begin{itemize}\setlength\itemsep{0.3em}
-      \item Gemini VLM call — sequential by design (one image \(\to\) one response)
+    \begin{itemize}\setlength\itemsep{0.25em}
+      \item Gemini VLM call
       \item Single DB write at end
-      \item \emph{Not} the USDA fan-out anymore
+      \item Not the USDA fan-out anymore
     \end{itemize}
+
     \vspace{0.4em}
     \textbf{Why Semaphore = 10?}\\
     USDA free tier: 1,000 req/h. Semaphore keeps burst well within limit.
   \end{columns}
-
 \end{frame}
 
-% ========== SLIDE 6: ROBUSTNESS ======================================
-\begin{frame}{Robustness: One Concrete Failure Mode}
-
+% ========== SLIDE 8: ROBUSTNESS / AI SERVICE =========================
+\begin{frame}{Robustness: AI Service \& Retry\speaker{Gülnur Mammadova}}
+  \small
   \begin{columns}[T,onlytextwidth]
     \column{0.50\textwidth}
-    \begin{block}{Failure injected}
+    \begin{block}{Real failure we hit}
       \texttt{google-genai==0.3.0} does not support\\
-      \texttt{Files.upload(file=...)} — original code used a v1 API.
+      \texttt{Files.upload(file=...)}. Original code used a v1 API.
     \end{block}
 
-    \vspace{0.5em}
+    \vspace{0.4em}
     \textbf{What happened:}
-    \begin{enumerate}\setlength\itemsep{0.2em}
-      \item \texttt{tenacity} retried 4 times — each failed
+    \begin{enumerate}\setlength\itemsep{0.18em}
+      \item \texttt{tenacity} retried 4 times
       \item Logs showed \texttt{attempt=1..4, exc=TypeError}
-      \item FastAPI returned HTTP 500 with clean JSON — no traceback exposed
+      \item FastAPI returned HTTP 500 with clean JSON
     \end{enumerate}
 
-    \column{0.47\textwidth}
+    \vspace{0.3em}
     \textbf{Fix applied:}
-    \begin{itemize}\setlength\itemsep{0.25em}
-      \item Switched to \texttt{types.Part.from\_bytes()}\\(inline image bytes — no files API needed)
-      \item Zero changes in SE layer — only the AI adapter
-    \end{itemize}
-
-    \vspace{0.5em}
-    \textbf{General wrapping pattern:}\\
-    Every \texttt{ai.*} call goes through:
     \begin{itemize}\setlength\itemsep{0.2em}
-      \item Retry (4 attempts, 2--30\,s backoff)
-      \item Timeout (60\,s VLM / 20\,s USDA)
-      \item Structured logging (\texttt{INFO} / \texttt{WARNING})
-      \item Response validation (Pydantic)
+      \item Switched to \texttt{types.Part.from\_bytes()}
+      \item Inline image bytes, no Files API
+      \item Zero changes in SE layer
     \end{itemize}
-  \end{columns}
 
+    \column{0.47\textwidth}
+    \textbf{AIService wrapping pattern:}
+    \begin{itemize}\setlength\itemsep{0.22em}
+      \item Retry: 4 attempts, 2--30\,s exponential backoff
+      \item Timeout: 60\,s VLM, 20\,s USDA
+      \item Structured logging at every attempt
+      \item Response validated with Pydantic
+    \end{itemize}
+
+    \vspace{0.4em}
+    \begin{block}{Key insight}
+      \small Isolating \texttt{ai/} calls behind \texttt{AIService} meant the fix
+      was one line in the adapter --- our SE layer was untouched.
+    \end{block}
+  \end{columns}
 \end{frame}
 
-% ========== SLIDE 7: LIVE DEMO =======================================
-\begin{frame}[fragile]{Live Demo}
-
+% ========== SLIDE 9: NUTRITION CACHE & LIMITATIONS ===================
+\begin{frame}{NutritionCache \& What We'd Do Next\speaker{Gülnur Mammadova}}
+  \small
   \begin{columns}[T,onlytextwidth]
     \column{0.50\textwidth}
-    \begin{block}{What we show}
-      Upload \texttt{rice\_chicken\_broccoli.png} via the web UI at \texttt{localhost:8000}
-      — watch ingredients, kcal, macros appear; check the history table.
+      \textbf{\color{accent}How NutritionCache works}
+      \begin{itemize}\setlength\itemsep{0.22em}
+        \item Dict keyed on lowercased ingredient name
+        \item TTL: 24\,h default (\texttt{NUTRITION\_CACHE\_TTL\_SECONDS})
+        \item Lazy eviction --- stale entries removed on read
+        \item \texttt{asyncio.Lock} prevents duplicate writes
+      \end{itemize}
+
+      \vspace{0.4em}
+      \textbf{\color{accent}Where the system is brittle today}
+      \begin{itemize}\setlength\itemsep{0.2em}
+        \item Cache is \textbf{in-memory}: restart clears it
+        \item No API authentication or rate limiting
+        \item Regional dish names may miss USDA data
+        \item CLI test coverage: \textbf{0\%}
+      \end{itemize}
+
+    \column{0.47\textwidth}
+      \textbf{\color{accent}Given another week we would}
+      \begin{enumerate}\setlength\itemsep{0.4em}
+        \item Replace cache with \textbf{Redis} --- persistent, keyed by USDA food ID
+        \item Add \textbf{GitHub Actions CI} pipeline
+        \item Add \textbf{multi-provider failover}\\
+              Gemini \(\to\) Anthropic on consecutive 5xx
+      \end{enumerate}
+  \end{columns}
+\end{frame}
+
+% ========== SLIDE 10: LIVE DEMO ======================================
+\begin{frame}[fragile]{Live Demo: Deployed at \texttt{146.190.214.211:8000}\speaker{Şamistan Hüseynov}}
+  \small
+  \begin{columns}[T,onlytextwidth]
+    \column{0.40\textwidth}
+
+    \begin{block}{\small\(\rightarrow\) Live URL}
+      \centering\footnotesize\texttt{http://146.190.214.211:8000}
     \end{block}
 
-    \vspace{0.5em}
-    \textbf{Start the server:}
-    \begin{lstlisting}[style=bashsmall]
-docker compose up -d      # PostgreSQL
-$env:PYTHONPATH="src"     # Windows
-uvicorn foodanalyzer.api:app --reload
-    \end{lstlisting}
+    \vspace{0.25em}
+    \textbf{Demo steps:}
+    \begin{enumerate}\setlength\itemsep{0.18em}\footnotesize
+      \item Open the URL in browser
+      \item Drop a meal photo JPEG/PNG
+      \item Click \textbf{Analyze}
+      \item Watch ingredients, kcal, macros
+      \item Scroll down: PostgreSQL history
+    \end{enumerate}
 
-    \vspace{0.3em}
+    \vspace{0.25em}
     \textbf{Or via curl:}
     \begin{lstlisting}[style=bashsmall]
-curl -X POST localhost:8000/analyze \
+curl -X POST \
+  http://146.190.214.211:8000/analyze \
   -F "file=@data/rice_chicken.png"
     \end{lstlisting}
 
-    \column{0.47\textwidth}
-    \textbf{What you will see:}
-    \begin{itemize}\setlength\itemsep{0.35em}
-      \item Ingredient list — name, grams, kcal
-      \item Protein / carbs / fat breakdown
-      \item Totals row at the bottom
-      \item Analysis recorded in DB — visible via \texttt{GET /history}
-      \item Server logs: \texttt{INFO} per call, \texttt{WARNING} on retry
-    \end{itemize}
-
-    \vspace{0.5em}
-    {\footnotesize\textit{Backup: pre-recorded screencast available if network is slow.}}
+    \column{0.57\textwidth}
+    \begin{center}
+      \includegraphics[
+        width=\textwidth,
+        height=0.58\textheight,
+        keepaspectratio
+      ]{ui.png}
+    \end{center}
   \end{columns}
-
 \end{frame}
 
-% ========== SLIDE 8: TESTING =========================================
-\begin{frame}{Testing}
-
+% ========== SLIDE 11: TESTING ========================================
+\begin{frame}{Testing\speaker{Şamistan Hüseynov}}
+  \small
   \begin{columns}[T,onlytextwidth]
     \column{0.50\textwidth}
     \textbf{\color{accent}Coverage \& shape}
-    \begin{itemize}\setlength\itemsep{0.35em}
-      \item \textbf{158 tests}, all \textbf{offline} — no network, no DB, no real keys
+    \begin{itemize}\setlength\itemsep{0.25em}
+      \item \textbf{158 tests}, all \textbf{offline} (no network, no DB, no API keys)
       \item SE layer coverage: \textbf{79\%} \quad (requirement: 60\%)
       \item Provided smoke tests: \textcolor{ok}{\textbf{29 / 29 passing}}
       \item Mocking: \texttt{FakeVLMProvider}, \texttt{AsyncMock}
     \end{itemize}
 
-    \vspace{0.5em}
+    \vspace{0.4em}
     \textbf{\color{accent}Tooling}
-    \begin{itemize}\setlength\itemsep{0.2em}
+    \begin{itemize}\setlength\itemsep{0.18em}
       \item \texttt{pytest} + \texttt{pytest-asyncio} + \texttt{pytest-cov}
       \item \texttt{unittest.mock.AsyncMock}
     \end{itemize}
 
     \column{0.47\textwidth}
-    \textbf{\color{accent}Three tests worth calling out}
+    \textbf{\color{accent}Three tests that caught real bugs}
 
     \vspace{0.3em}
     \textbf{1. Happy-path end-to-end}\\
-    Full POST round-trip via \texttt{TestClient} — asserts HTTP 200, ingredients, kcal \(>\) 0
+    Full POST round-trip via \texttt{TestClient}. Asserts HTTP~200, ingredients present, kcal~\(>\)~0.
 
-    \vspace{0.4em}
+    \vspace{0.35em}
     \textbf{2. Concurrency graceful failure}\\
-    1 of 5 USDA lookups raises — other 4 complete, no crash; uses \texttt{return\_exceptions=True}
+    1 of 5 USDA lookups raises. Other 4 complete without crash.
 
-    \vspace{0.4em}
+    \vspace{0.35em}
     \textbf{3. Magic-byte validation}\\
-    \texttt{.jpg} file with PDF bytes rejected \emph{before} any API call — caught a real bug
+    \texttt{.jpg} file with PDF bytes \(\to\) rejected \emph{before} any API call.
   \end{columns}
-
 \end{frame}
 
-% ========== SLIDE 9: LIMITATIONS =====================================
-\begin{frame}{Limitations \& What We'd Do Next}
-
+% ========== SLIDE 12: DEPLOYMENT & DOCKER ============================
+\begin{frame}[fragile]{Deployment \& Docker\speaker{Şamistan Hüseynov}}
+  \small
   \begin{columns}[T,onlytextwidth]
     \column{0.50\textwidth}
-    \textbf{\color{accent}Where the system is brittle today}
-    \begin{itemize}\setlength\itemsep{0.35em}
-      \item \textbf{In-memory cache is per-process}\\
-            Restart clears the nutrition cache — Redis would fix this
-      \item \textbf{Local filesystem for images}\\
-            Multi-replica deployment needs S3 / GCS
-      \item \textbf{No API authentication}\\
-            \texttt{POST /analyze} is open — production needs rate limiting + keys
-      \item \textbf{USDA text-match quality}\\
-            Regional dish names may return zero nutrition silently
-      \item \textbf{CLI coverage: 0\%}\\
-            Manual verification only — \texttt{CliRunner} harness would close the gap
-    \end{itemize}
+      \textbf{\color{accent}Two-container setup}
+      \begin{itemize}\setlength\itemsep{0.22em}
+        \item \texttt{app} --- FastAPI + Uvicorn (Python 3.13-slim)
+        \item \texttt{db} --- PostgreSQL 16-alpine
+        \item Single command to start: \texttt{docker compose up -d}
+        \item \texttt{depends\_on + healthcheck} ensures DB is ready before app starts
+      \end{itemize}
+
+      \vspace{0.4em}
+      \textbf{\color{accent}Configuration via \texttt{.env}}
+      \begin{itemize}\setlength\itemsep{0.2em}
+        \item All secrets in one \texttt{.env} file — not in the image
+        \item pydantic-settings reads \& validates at startup
+        \item Same image, different envs: dev / staging / prod
+      \end{itemize}
 
     \column{0.47\textwidth}
-    \textbf{\color{accent}Given another week we would}
-    \begin{enumerate}\setlength\itemsep{0.5em}
-      \item Add \textbf{Redis-backed} persistent nutrition cache
-      \item Add \textbf{GitHub Actions CI}\\
-            (lint + test + Docker build on every PR)
-      \item Add \textbf{multi-provider failover}\\
-            Gemini \(\to\) Anthropic on consecutive 5xx
-    \end{enumerate}
+      \textbf{\color{accent}Production (DigitalOcean droplet)}
+      \begin{itemize}\setlength\itemsep{0.22em}
+        \item Running continuously for 2+ weeks
+        \item Volume mount keeps PostgreSQL data across restarts
+        \item Port 8000 exposed; Nginx reverse proxy ready to add
+      \end{itemize}
+
+      \vspace{0.4em}
+      \begin{block}{Why Docker?}
+        \small One \texttt{docker compose up} reproduces the exact same
+        environment on any machine --- no ``works on my machine'' problems.
+      \end{block}
   \end{columns}
-
 \end{frame}
 
-% ========== SLIDE 10: TEAM CONTRIBUTIONS =============================
-\begin{frame}{Team Contributions}
-
-  \begin{center}\small
-  \begin{tabularx}{\linewidth}{lXr}
-    \toprule
-    \textbf{Member} & \textbf{Primary ownership} & \textbf{\%} \\
-    \midrule
-    Aysel Mamedova
-      & \texttt{config.py}, \texttt{models.py}, \texttt{validation.py}, \texttt{cli.py},
-        \texttt{Dockerfile}, Docker Compose, web UI, project setup
-      & $\sim$25 \\[4pt]
-    Gülnur Məmmədova
-      & \texttt{ai\_service.py}, \texttt{retry.py}, \texttt{nutrition\_cache.py},
-        \texttt{pipeline.py}, concurrency tests, benchmark artefacts
-      & $\sim$25 \\[4pt]
-    Şəmistan Hüseynov
-      & \texttt{api.py} (endpoints, pagination, lifespan),
-        \texttt{test\_api.py}, \texttt{test\_analyzer.py}
-      & $\sim$25 \\[4pt]
-    Rəhimə Kərimova
-      & \texttt{storage/db.py}, \texttt{repository.py}, \texttt{logging\_config.py},
-        \texttt{core/analyzer.py}, storage + logging tests
-      & $\sim$25 \\
-    \bottomrule
-  \end{tabularx}
-  \end{center}
-
-  \vspace{0.5em}
-  \begin{block}{We can all answer}
-    Any team member can walk through any module on demand.
-    Pick a file — we will explain and defend it.
-  \end{block}
-
-\end{frame}
-
-% ========== SLIDE 11: Q&A ============================================
+% ========== SLIDE 13: Q&A ============================================
 {
 \setbeamertemplate{footline}{}
 \setbeamercolor{background canvas}{bg=accent}
 \begin{frame}[plain]
   \begin{center}
-    \vspace{1.2cm}
-    {\fontsize{40}{44}\bfseries\color{white} Questions?}\\[1.2em]
-    \textcolor{white!60!accent}{\rule{0.45\textwidth}{0.5pt}}\\[1em]
-    {\large\bfseries\color{white} \teamname}\\[0.4em]
-    {\normalsize\color{white!80!accent}\texttt{\repolink}}\\[1cm]
+    \vspace{0.5cm}
+    {\fontsize{36}{40}\bfseries\color{white} Questions?}\\[0.9em]
+    \textcolor{white!60!accent}{\rule{0.45\textwidth}{0.5pt}}\\[0.7em]
+    {\large\bfseries\color{white} \teamname}\\[0.3em]
+    {\normalsize\color{white!80!accent}\texttt{\repolink}}\\[0.6em]
     {\footnotesize\color{white!70!accent}\itshape
-      ``Upload a photo. Get nutrition facts. In under two seconds.''}
+      ``Upload a photo. Get nutrition facts. In under two seconds.''}\\[0.7em]
+    \textcolor{white!40!accent}{\rule{0.7\textwidth}{0.3pt}}\\[0.5em]
+    {\tiny\color{white!55!accent}
+      \begin{tabular}{ll}
+        Aysel Mamedova   & config, models, validation, CLI, Docker, web UI \\
+        Rahima Karimova  & analyzer, db, repository, logging \\
+        Gülnur Mammadova & ai\_service, retry, pipeline, cache \\
+        Şamistan Hüseynov & api, lifespan, test\_api, test\_analyzer \\
+      \end{tabular}
+    }
   \end{center}
 \end{frame}
 }
